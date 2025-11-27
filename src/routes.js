@@ -3,25 +3,34 @@ import UserController from './app/controllers/UserController.js';
 import SessionController from './app/controllers/SessionController.js';
 import ProductController from './app/controllers/ProductController.js';
 import upload from './config/multer.js';
+import { authMiddleware } from './app/middlewares/authMiddleware.js';
 
 const routes = new Router();
 
-// Rotas de usuários
-routes.post('/users', UserController.store);
-routes.get('/users/:id', UserController.show);
-routes.put('/users/:id', UserController.update);
-routes.delete('/users/:id', UserController.delete);
-routes.get('/users', UserController.index);
+// ===== ROTAS PÚBLICAS =====
 
-// Rota de login
+// Usuários (públicas)
+routes.post('/users', UserController.store);
+routes.get('/users', UserController.index);
+routes.get('/users/:id', UserController.show);
+
+// Login
 routes.post('/session', SessionController.store);
 
-// Rotas de produtos
-routes.post('/products', upload.single('image'), ProductController.store);
+// Produtos (públicas)
 routes.get('/products', ProductController.index);
 routes.get('/products/:id', ProductController.show);
-routes.put('/products/:id', upload.single('image'), ProductController.update);
-routes.delete('/products/:id', ProductController.delete);
+
+// ===== ROTAS PROTEGIDAS =====
+
+// Usuários (protegidas)
+routes.put('/users/:id', authMiddleware, UserController.update);
+routes.delete('/users/:id', authMiddleware, UserController.delete);
+
+// Produtos (protegidas)
+routes.post('/products', authMiddleware, upload.single('image'), ProductController.store);
+routes.put('/products/:id', authMiddleware, upload.single('image'), ProductController.update);
+routes.delete('/products/:id', authMiddleware, ProductController.delete);
 
 export default routes;
 
