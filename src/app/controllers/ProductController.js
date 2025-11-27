@@ -7,7 +7,6 @@ class ProductController {
       const { name, price, category } = req.body;
       const file = req.file;
 
-      // Validar com Yup
       await productCreateSchema.validate({ name, price, category, path: file ? 'ok' : '' });
 
       if (!file) {
@@ -15,16 +14,38 @@ class ProductController {
       }
 
       const path = `http://localhost:3001/${file.filename}`;
-
-      // ✅ CORRIGIR: Converter price para número
       const product = await Product.create({
         name,
-        price: parseFloat(price), // ← Adicione isso!
+        price: parseFloat(price),
         category,
         path,
       });
 
       return res.status(201).json(product);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async index(req, res) {
+    try {
+      const products = await Product.findAll();
+      return res.json(products);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async show(req, res) {
+    try {
+      const { id } = req.params;
+      const product = await Product.findByPk(id);
+
+      if (!product) {
+        return res.status(404).json({ message: 'Produto não encontrado' });
+      }
+
+      return res.json(product);
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
@@ -38,6 +59,7 @@ class ProductController {
       await productUpdateSchema.validate({ name, price, category, path: req.file ? 'ok' : '' });
 
       const product = await Product.findByPk(id);
+
       if (!product) {
         return res.status(404).json({ message: 'Produto não encontrado' });
       }
@@ -49,7 +71,7 @@ class ProductController {
 
       await product.update({
         name: name || product.name,
-        price: price ? parseFloat(price) : product.price, // ← Adicione isso!
+        price: price ? parseFloat(price) : product.price,
         category: category || product.category,
         path,
       });
@@ -60,7 +82,21 @@ class ProductController {
     }
   }
 
-  // ... resto dos métodos (index, show, delete) continuam iguais
+  async delete(req, res) {
+    try {
+      const { id } = req.params;
+      const product = await Product.findByPk(id);
+
+      if (!product) {
+        return res.status(404).json({ message: 'Produto não encontrado' });
+      }
+
+      await product.destroy();
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 export default new ProductController();
