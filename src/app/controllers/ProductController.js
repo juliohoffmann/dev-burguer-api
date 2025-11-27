@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+
 import { productCreateSchema, productUpdateSchema } from '../schemas/ProductSchema.js';
 
 class ProductController {
@@ -27,14 +28,15 @@ class ProductController {
     }
   }
 
-  async index(req, res) {
-    try {
-      const products = await Product.findAll();
-      return res.json(products);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
+ async index(res) {
+  try {
+    const products = await Product.findAll();
+    return res.json(products);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
+}
+
 
   async show(req, res) {
     try {

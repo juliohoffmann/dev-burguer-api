@@ -1,9 +1,11 @@
+// biome-ignore assist/source/organizeImports: false positive
 import { Router } from 'express';
-import UserController from './app/controllers/UserController.js';
-import SessionController from './app/controllers/SessionController.js';
-import ProductController from './app/controllers/ProductController.js';
-import upload from './config/multer.js';
+
 import { authMiddleware } from './app/middlewares/authMiddleware.js';
+import ProductController from './app/controllers/ProductController.js';
+import SessionController from './app/controllers/SessionController.js';
+import UserController from './app/controllers/UserController.js';
+import upload from './config/multer.js';
 
 const routes = new Router();
 

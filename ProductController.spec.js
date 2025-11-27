@@ -1,8 +1,9 @@
-import ProductController from './ProductController';
 import Product from '../models/Product';
+import ProductController from './ProductController';
 
 // Mock the Product model
 jest.mock('../models/Product');
+
 
 describe('ProductController', () => {
   // Mock Express request and response objects for each test
