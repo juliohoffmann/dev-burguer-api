@@ -1,3 +1,4 @@
+// biome-ignore assist/source/organizeImports: imports are manually organized
 import { v4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
@@ -41,7 +42,7 @@ class UserController {
     }
   }
 
-  async index(request, response) {
+  async index( response) {
     try {
       const users = await User.findAll();
       return response.json(users);

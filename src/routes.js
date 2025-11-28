@@ -22,7 +22,9 @@ routes.post('/session', SessionController.store);
 // Produtos (públicas)
 routes.get('/products', ProductController.index);
 routes.get('/products/:id', ProductController.show);
-
+// ===== ROTAS categorias =====
+routes.post('/categories', UserController.store);
+routes.get('/categories', UserController.index);
 // ===== ROTAS PROTEGIDAS =====
 
 // Usuários (protegidas)
