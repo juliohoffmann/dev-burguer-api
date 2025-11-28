@@ -1,15 +1,16 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+
 import User from '../models/User.js';
 import { sessionCreateSchema } from '../schemas/SessionSchema.js';
 
 class SessionController {
   async store(request, response) {
     try {
-      const { email, password_hash } = request.body;
+      const { email, password } = request.body;
 
       // Valida com Yup
-      await sessionCreateSchema.validate({ email, password_hash });
+      await sessionCreateSchema.validate({ email, password });
 
       // Busca o usuário pelo email
       const user = await User.findOne({
@@ -19,17 +20,17 @@ class SessionController {
       });
 
       if (!user) {
-        return response.status(401).json({ 
-          message: 'Email ou senha incorretos!' 
+        return response.status(401).json({
+          message: 'Email ou senha incorretos!',
         });
       }
 
       // Compara a senha digitada com o hash armazenado
-      const passwordMatch = await bcrypt.compare(password_hash, user.password_hash);
+      const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
       if (!passwordMatch) {
-        return response.status(401).json({ 
-          message: 'Email ou senha incorretos!' 
+        return response.status(401).json({
+          message: 'Email ou senha incorretos!',
         });
       }
 
@@ -50,8 +51,8 @@ class SessionController {
         },
       });
     } catch (error) {
-      return response.status(400).json({ 
-        message: error.message 
+      return response.status(400).json({
+        message: error.message,
       });
     }
   }

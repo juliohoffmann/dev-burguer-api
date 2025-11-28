@@ -24,7 +24,8 @@ class User extends Model {
         },
         admin: {
           type: DataTypes.BOOLEAN,
-          defaultValue: false,
+          defaultValue: false, // ✅ Padrão é user comum
+          allowNull: false,
         },
       },
       {

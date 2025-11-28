@@ -7,8 +7,8 @@ import { userCreateSchema, userUpdateSchema } from '../schemas/UserSchema.js';
 class UserController {
   async store(request, response) {
     try {
-      const { name, email, password_hash, admin } = request.body;
-      await userCreateSchema.validate({ name, email, password_hash, admin });
+      const { name, email, password, admin } = request.body;
+      await userCreateSchema.validate({ name, email, password, admin });
 
       const existingUser = await User.findOne({
         where: { email },
@@ -20,13 +20,13 @@ class UserController {
         });
       }
 
-      const hashedPassword = await bcrypt.hash(password_hash, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
       const user = await User.create({
         id: v4(),
         name,
         email,
         password_hash: hashedPassword,
-        admin,
+        admin: admin || false,
       });
 
       return response.status(201).json({
@@ -42,7 +42,7 @@ class UserController {
     }
   }
 
-  async index( response) {
+  async index(request, response) {
     try {
       const users = await User.findAll();
       return response.json(users);
@@ -74,7 +74,6 @@ class UserController {
     try {
       const { id } = request.params;
       const { name, email, admin } = request.body;
-
       await userUpdateSchema.validate({ name, email, admin });
 
       const user = await User.findByPk(id);

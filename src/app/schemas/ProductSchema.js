@@ -12,7 +12,7 @@ export const productCreateSchema = yup.object().shape({
   path: yup
     .string()
     .required('Imagem é obrigatória'),
-  category: yup
+  category_id: yup
     .string()
     .required('Categoria é obrigatória'),
 });
@@ -26,6 +26,6 @@ export const productUpdateSchema = yup.object().shape({
     .positive('Preço deve ser positivo'),
   path: yup
     .string(),
-  category: yup
+  category_id: yup
     .string(),
 });

@@ -1,40 +1,30 @@
-// biome-ignore assist/source/organizeImports: false positive
+// src/routes.js
 import { Router } from 'express';
-
-import { authMiddleware } from './app/middlewares/authMiddleware.js';
-import ProductController from './app/controllers/ProductController.js';
-import SessionController from './app/controllers/SessionController.js';
 import UserController from './app/controllers/UserController.js';
+import CategoryController from './app/controllers/CategoryController.js';
+import ProductController from './app/controllers/ProductController.js';
+import authMiddleware from './app/middlewares/authMiddleware.js';
+import adminMiddleware from './app/middlewares/adminMiddleware.js';
 import upload from './config/multer.js';
 
-const routes = new Router();
+const routes = Router();
 
-// ===== ROTAS PÚBLICAS =====
-
-// Usuários (públicas)
+// ✅ ROTAS DE USUÁRIOS
 routes.post('/users', UserController.store);
-routes.get('/users', UserController.index);
-routes.get('/users/:id', UserController.show);
+routes.post('/session', UserController.session);
 
-// Login
-routes.post('/session', SessionController.store);
+// ✅ ROTAS DE CATEGORIAS (apenas admin)
+routes.post('/categories', adminMiddleware, CategoryController.store);
+routes.get('/categories', CategoryController.index);
+routes.put('/categories/:id', adminMiddleware, CategoryController.update);
+routes.delete('/categories/:id', adminMiddleware, CategoryController.delete);
 
-// Produtos (públicas)
+// ✅ ROTAS DE PRODUTOS (apenas admin pode criar/editar/deletar)
+routes.post('/products', adminMiddleware, upload.single('image'), ProductController.store);
 routes.get('/products', ProductController.index);
 routes.get('/products/:id', ProductController.show);
-// ===== ROTAS categorias =====
-routes.post('/categories', UserController.store);
-routes.get('/categories', UserController.index);
-// ===== ROTAS PROTEGIDAS =====
-
-// Usuários (protegidas)
-routes.put('/users/:id', authMiddleware, UserController.update);
-routes.delete('/users/:id', authMiddleware, UserController.delete);
-
-// Produtos (protegidas)
-routes.post('/products', authMiddleware, upload.single('image'), ProductController.store);
-routes.put('/products/:id', authMiddleware, upload.single('image'), ProductController.update);
-routes.delete('/products/:id', authMiddleware, ProductController.delete);
+routes.put('/products/:id', adminMiddleware, upload.single('image'), ProductController.update);
+routes.delete('/products/:id', adminMiddleware, ProductController.delete);
 
 export default routes;
 

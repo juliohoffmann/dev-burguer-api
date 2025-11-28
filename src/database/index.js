@@ -1,7 +1,8 @@
+// biome-ignore assist/source/organizeImports: imports ordered by dependency
 import Sequelize from 'sequelize';
 
 import dbConfig from '../config/database.cjs';
-import Category from '../app/models/Categories.js';
+import Category from '../app/models/Category.js';
 import User from '../app/models/User.js';
 import Product from '../app/models/Product.js';
 

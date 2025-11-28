@@ -12,19 +12,24 @@ class Product extends Model {
         },
         name: {
           type: DataTypes.STRING,
-          allowNull: true,
-        },
-        price: {
-          type: DataTypes.INTEGER,
           allowNull: false,
         },
+        price: {
+          type: DataTypes.DECIMAL(10, 2),  // ✅ CORRETO: permite 25.50
+          allowNull: false,
+        },
+
         path: {
           type: DataTypes.STRING,
           allowNull: false,
         },
-        category: {
-          type: DataTypes.STRING,
+        category_id: {
+          type: DataTypes.UUID,
           allowNull: false,
+          references: {
+            model: 'categories',
+            key: 'id',
+          },
         },
       },
       {
@@ -34,12 +39,14 @@ class Product extends Model {
         underscored: true,
       }
     );
-
     return this;
   }
 
   static associate(models) {
-    // Associações aqui depois
+    this.belongsTo(models.Category, {
+      foreignKey: 'category_id',
+      as: 'category',
+    });
   }
 }
 

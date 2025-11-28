@@ -1,24 +1,39 @@
+// src/app/controllers/ProductController.js
 import Product from '../models/Product.js';
-
 import { productCreateSchema, productUpdateSchema } from '../schemas/ProductSchema.js';
 
 class ProductController {
+  async index(req, res) {
+    try {
+      const products = await Product.findAll({
+        include: {
+          association: 'category',
+          attributes: ['id', 'name'],
+        },
+      });
+      return res.json(products);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
   async store(req, res) {
     try {
-      const { name, price, category } = req.body;
+      const { name, price, category_id } = req.body;
       const file = req.file;
 
-      await productCreateSchema.validate({ name, price, category, path: file ? 'ok' : '' });
+      await productCreateSchema.validate({ name, price, category_id, path: file ? 'ok' : '' });
 
       if (!file) {
         return res.status(400).json({ message: 'Imagem é obrigatória' });
       }
 
       const path = `http://localhost:3001/${file.filename}`;
+
       const product = await Product.create({
         name,
         price: parseFloat(price),
-        category,
+        category_id,
         path,
       });
 
@@ -28,20 +43,16 @@ class ProductController {
     }
   }
 
- async index(res) {
-  try {
-    const products = await Product.findAll();
-    return res.json(products);
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
-}
-
-
   async show(req, res) {
     try {
       const { id } = req.params;
-      const product = await Product.findByPk(id);
+
+      const product = await Product.findByPk(id, {
+        include: {
+          association: 'category',
+          attributes: ['id', 'name'],
+        },
+      });
 
       if (!product) {
         return res.status(404).json({ message: 'Produto não encontrado' });
@@ -56,9 +67,9 @@ class ProductController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { name, price, category } = req.body;
+      const { name, price, category_id } = req.body;
 
-      await productUpdateSchema.validate({ name, price, category, path: req.file ? 'ok' : '' });
+      await productUpdateSchema.validate({ name, price, category_id, path: req.file ? 'ok' : '' });
 
       const product = await Product.findByPk(id);
 
@@ -67,6 +78,7 @@ class ProductController {
       }
 
       let path = product.path;
+
       if (req.file) {
         path = `http://localhost:3001/${req.file.filename}`;
       }
@@ -74,7 +86,7 @@ class ProductController {
       await product.update({
         name: name || product.name,
         price: price ? parseFloat(price) : product.price,
-        category: category || product.category,
+        category_id: category_id || product.category_id,
         path,
       });
 
@@ -87,6 +99,7 @@ class ProductController {
   async delete(req, res) {
     try {
       const { id } = req.params;
+
       const product = await Product.findByPk(id);
 
       if (!product) {
@@ -94,6 +107,7 @@ class ProductController {
       }
 
       await product.destroy();
+
       return res.status(204).send();
     } catch (error) {
       return res.status(400).json({ message: error.message });
@@ -102,3 +116,4 @@ class ProductController {
 }
 
 export default new ProductController();
+
