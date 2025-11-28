@@ -1,4 +1,5 @@
-import { Model, DataTypes } from "sequelize";
+// src/app/models/User.js
+import { DataTypes, Model } from 'sequelize';
 
 class User extends Model {
   static init(sequelize) {
@@ -8,6 +9,7 @@ class User extends Model {
           type: DataTypes.UUID,
           defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
           type: DataTypes.STRING,
@@ -24,7 +26,7 @@ class User extends Model {
         },
         admin: {
           type: DataTypes.BOOLEAN,
-          defaultValue: false, // ✅ Padrão é user comum
+          defaultValue: false,
           allowNull: false,
         },
       },
@@ -35,6 +37,7 @@ class User extends Model {
         underscored: true,
       }
     );
+    return this;
   }
 }
 

@@ -1,27 +1,27 @@
-// biome-ignore assist/source/organizeImports: imports ordered by dependency
+// src/database/index.js
 import Sequelize from 'sequelize';
 
-import dbConfig from '../config/database.cjs';
 import Category from '../app/models/Category.js';
-import User from '../app/models/User.js';
+import Offer from '../app/models/Offer.js';
 import Product from '../app/models/Product.js';
-
+import User from '../app/models/User.js';
+import dbConfig from '../config/database.cjs';
 
 const sequelize = new Sequelize(dbConfig);
 
-const models = [User, Product, Category];
+const models = [User, Product, Category, Offer];
 
-models.forEach((model) => { model.init(sequelize); });
 models.forEach((model) => {
-  model.associate?.(sequelize.models);
+  model.init(sequelize);  // ✅ CORRIJA AQUI (era model(sequelize))
+});
+
+Object.values(sequelize.models).forEach((model) => {
+  if (model.associate) {
+    model.associate(sequelize.models);
+  }
 });
 
 export default sequelize;
-
-
-
-
-
 
 
 
