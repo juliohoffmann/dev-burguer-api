@@ -10,7 +10,7 @@ export const userCreateSchema = yup.object().shape({
     .string()
     .email('Email inválido')
     .required('Email é obrigatório'),
-  password_hash: yup  // ✅ CORRIJA AQUI (era 'password')
+  password_hash: yup
     .string()
     .required('Senha é obrigatória')
     .min(6, 'Senha deve ter no mínimo 6 caracteres'),

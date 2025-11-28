@@ -10,7 +10,7 @@ class SessionController {
       const { email, password } = request.body;
 
       // Valida com Yup
-      await sessionCreateSchema.validate({ email, password });
+      await sessionCreateSchema.validate({ email, password_hash });
 
       // Busca o usuário pelo email
       const user = await User.findOne({

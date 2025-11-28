@@ -1,3 +1,4 @@
+// src/app/controllers/UserController.js
 // biome-ignore assist/source/organizeImports: imports are manually organized
 import { v4 } from 'uuid';
 import bcrypt from 'bcrypt';
@@ -7,8 +8,8 @@ import { userCreateSchema, userUpdateSchema } from '../schemas/UserSchema.js';
 class UserController {
   async store(request, response) {
     try {
-      const { name, email, password, admin } = request.body;
-      await userCreateSchema.validate({ name, email, password, admin });
+      const { name, email, password_hash, admin } = request.body;  // ✅ MUDE PARA password_hash
+      await userCreateSchema.validate({ name, email, password_hash, admin });
 
       const existingUser = await User.findOne({
         where: { email },
@@ -20,7 +21,7 @@ class UserController {
         });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password_hash, 10);  // ✅ MUDE PARA password_hash
       const user = await User.create({
         id: v4(),
         name,
@@ -111,3 +112,4 @@ class UserController {
 }
 
 export default new UserController();
+
