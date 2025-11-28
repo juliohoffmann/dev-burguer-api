@@ -1,3 +1,4 @@
+// src/app/schemas/UserSchema.js
 import * as yup from 'yup';
 
 export const userCreateSchema = yup.object().shape({
@@ -9,7 +10,7 @@ export const userCreateSchema = yup.object().shape({
     .string()
     .email('Email inválido')
     .required('Email é obrigatório'),
-  password: yup
+  password_hash: yup  // ✅ CORRIJA AQUI (era 'password')
     .string()
     .required('Senha é obrigatória')
     .min(6, 'Senha deve ter no mínimo 6 caracteres'),

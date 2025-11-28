@@ -11,7 +11,14 @@ class ProductController {
           attributes: ['id', 'name'],
         },
       });
-      return res.json(products);
+
+      // ✅ CONVERTA price para número
+      const productsFormatted = products.map(product => ({
+        ...product.toJSON(),
+        price: Number(product.price),
+      }));
+
+      return res.json(productsFormatted);
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
@@ -37,7 +44,13 @@ class ProductController {
         path,
       });
 
-      return res.status(201).json(product);
+      // ✅ CONVERTA price para número no retorno
+      const productFormatted = {
+        ...product.toJSON(),
+        price: Number(product.price),
+      };
+
+      return res.status(201).json(productFormatted);
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
@@ -58,7 +71,13 @@ class ProductController {
         return res.status(404).json({ message: 'Produto não encontrado' });
       }
 
-      return res.json(product);
+      // ✅ CONVERTA price para número
+      const productFormatted = {
+        ...product.toJSON(),
+        price: Number(product.price),
+      };
+
+      return res.json(productFormatted);
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
@@ -90,7 +109,13 @@ class ProductController {
         path,
       });
 
-      return res.json(product);
+      // ✅ CONVERTA price para número no retorno
+      const productFormatted = {
+        ...product.toJSON(),
+        price: Number(product.price),
+      };
+
+      return res.json(productFormatted);
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
@@ -116,4 +141,3 @@ class ProductController {
 }
 
 export default new ProductController();
-

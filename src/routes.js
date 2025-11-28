@@ -1,6 +1,7 @@
 // src/routes.js
 import { Router } from 'express';
 import UserController from './app/controllers/UserController.js';
+import SessionController from './app/controllers/SessionController.js';  // ✅ ADICIONE
 import CategoryController from './app/controllers/CategoryController.js';
 import ProductController from './app/controllers/ProductController.js';
 import authMiddleware from './app/middlewares/authMiddleware.js';
@@ -11,7 +12,7 @@ const routes = Router();
 
 // ✅ ROTAS DE USUÁRIOS
 routes.post('/users', UserController.store);
-routes.post('/session', UserController.session);
+routes.post('/session', SessionController.store);  // ✅ CORRIJA AQUI (linha 14)
 
 // ✅ ROTAS DE CATEGORIAS (apenas admin)
 routes.post('/categories', adminMiddleware, CategoryController.store);
