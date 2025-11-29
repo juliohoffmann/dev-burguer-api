@@ -14,6 +14,10 @@ class Category extends Model {
           type: DataTypes.STRING,
           allowNull: false,
         },
+        path: {
+          type: DataTypes.STRING,
+        
+        },
       },
       {
         sequelize,

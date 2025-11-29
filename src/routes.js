@@ -16,10 +16,10 @@ routes.post('/users', UserController.store);
 routes.post('/session', SessionController.store);
 
 // ✅ ROTAS DE CATEGORIAS (apenas admin)
-routes.post('/categories', adminMiddleware, CategoryController.store);
+routes.post('/categories', adminMiddleware,upload.single('image'), CategoryController.store);
 routes.get('/categories', CategoryController.index);
 routes.put('/categories/:id', adminMiddleware, CategoryController.update);
-routes.delete('/categories/:id', adminMiddleware, CategoryController.delete);
+routes.delete('/categories/:id', adminMiddleware,upload.single('image'), CategoryController.delete);
 
 // ✅ ROTAS DE PRODUTOS (apenas admin pode criar/editar/deletar)
 routes.post('/products', adminMiddleware, upload.single('image'), ProductController.store);
