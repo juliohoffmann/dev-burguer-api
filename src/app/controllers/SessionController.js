@@ -7,10 +7,10 @@ import { sessionCreateSchema } from '../schemas/SessionSchema.js';
 class SessionController {
   async store(request, response) {
     try {
-      const { email, password_hash } = request.body;  // ✅ MUDE PARA password_hash
+      const { email, password_hash } = request.body;
 
       // Valida com Yup
-      await sessionCreateSchema.validate({ email, password_hash });  // ✅ CORRETO AGORA
+      await sessionCreateSchema.validate({ email, password_hash });
 
       // Busca o usuário pelo email
       const user = await User.findOne({
@@ -26,7 +26,7 @@ class SessionController {
       }
 
       // Compara a senha digitada com o hash armazenado
-      const passwordMatch = await bcrypt.compare(password_hash, user.password_hash);  // ✅ MUDE PARA password_hash
+      const passwordMatch = await bcrypt.compare(password_hash, user.password_hash);
 
       if (!passwordMatch) {
         return response.status(401).json({
@@ -34,9 +34,13 @@ class SessionController {
         });
       }
 
-      // Gera o token JWT
+      // Gera o token JWT COM admin
       const token = jwt.sign(
-        { id: user.id, email: user.email },
+        { 
+          id: user.id, 
+          email: user.email,
+          admin: user.admin  // ✅ ADICIONE AQUI
+        },
         process.env.JWT_SECRET || 'seu_secret_key_aqui',
         { expiresIn: '7d' }
       );
@@ -59,4 +63,5 @@ class SessionController {
 }
 
 export default new SessionController();
+
 
