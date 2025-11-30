@@ -14,7 +14,7 @@ const routes = Router();
 
 // ✅ ROTAS DE USUÁRIOS
 routes.post('/users', UserController.store);
-routes.post('/session', SessionController.store);
+routes.post('/sessions', SessionController.store);
 
 // ✅ ROTAS DE CATEGORIAS (apenas admin)
 routes.post('/categories', adminMiddleware, upload.single('image'), CategoryController.store);
