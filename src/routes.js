@@ -6,7 +6,7 @@ import SessionController from './app/controllers/SessionController.js';
 import CategoryController from './app/controllers/CategoryController.js';
 import ProductController from './app/controllers/ProductController.js';
 import OfferController from './app/controllers/OfferController.js';
-import authMiddleware from './app/middlewares/authMiddleware.js';
+
 import adminMiddleware from './app/middlewares/adminMiddleware.js';
 import upload from './config/multer.js';
 
@@ -34,7 +34,9 @@ routes.get('/offers/:id', OfferController.show);
 routes.put('/offers/:id', adminMiddleware, OfferController.update);
 routes.delete('/offers/:id', adminMiddleware, OfferController.delete);
 
-routes.post('/order', adminMiddleware,OrderController.store);
+routes.post('/order', OrderController.store);
+routes.get('/orders',  OrderController.index);
+routes.put('/orders', adminMiddleware, OrderController.update);
 
 export default routes;
 

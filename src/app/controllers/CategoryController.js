@@ -1,5 +1,5 @@
 import Category from '../models/Category.js';
-import CategoryImage from '../schemas/CategoryImageSchema.js';
+
 import { categoryCreateSchema, categoryUpdateSchema } from '../schemas/CategorySchema.js';
 import fs from 'fs';
 import path from 'path';
