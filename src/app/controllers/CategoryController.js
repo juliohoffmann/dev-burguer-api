@@ -1,161 +1,94 @@
+import * as Yup from 'yup';
 import Category from '../models/Category.js';
-
-import { categoryCreateSchema, categoryUpdateSchema } from '../schemas/CategorySchema.js';
-import fs from 'fs';
-import path from 'path';
+import User from '../models/User.js';
 
 class CategoryController {
-  async index(req, res) {
+  async store(request, response) {
     try {
-      const categories = await Category.findAll();
+      const schema = Yup.object().shape({
+        name: Yup.string().required(),
+      });
 
-      // ✅ BUSCAR IMAGENS DO MONGODB
-      const categoriesWithImages = await Promise.all(
-        categories.map(async (category) => {
-          const image = await CategoryImage.findOne({ categoryId: category.id });
-          return {
-            ...category.toJSON(),
-            imagePath: image ? image.imagePath : category.path,
-          };
-        })
-      );
-
-      return res.json(categoriesWithImages);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  }
-
-  async store(req, res) {
-    try {
-      const { name } = req.body;
-      const file = req.file;
-
-      await categoryCreateSchema.validate({ name, path: file ? 'ok' : '' });
-
-      if (!file) {
-        return res.status(400).json({ message: 'Arquivo de imagem é obrigatório' });
+      try {
+        schema.validateSync(request.body, { abortEarly: false });
+      } catch (err) {
+        return response.status(400).json({ error: err.errors });
       }
 
-      // ✅ CRIAR CATEGORIA NO POSTGRESQL
-      const category = await Category.create({ 
-        name, 
-        path: `/uploads/${file.filename}` 
-      });
+      const { admin: isAdmin } = await User.findByPk(request.userId);
 
-      // ✅ SALVAR IMAGEM NO MONGODB
-      await CategoryImage.create({
-        categoryId: category.id,
-        imagePath: `/uploads/${file.filename}`,
-        mimeType: file.mimetype,
-      });
+      if (!isAdmin) {
+        return response.status(401).json();
+      }
 
-      return res.status(201).json({
-        ...category.toJSON(),
-        imagePath: `/uploads/${file.filename}`,
-      });
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  }
+      const { name } = request.body;
 
-  async show(req, res) {
-    try {
-      const { id } = req.params;
+      const { filename: path } = request.file;
 
-      const category = await Category.findByPk(id, {
-        include: {
-          association: 'products',
-          attributes: ['id', 'name', 'price', 'path'],
+      const categoryExists = await Category.findOne({
+        where: {
+          name,
         },
       });
 
-      if (!category) {
-        return res.status(404).json({ message: 'Categoria não encontrada' });
+      if (categoryExists) {
+        return response.status(400).json({ error: 'Category already exists' });
       }
 
-      // ✅ BUSCAR IMAGEM DO MONGODB
-      const image = await CategoryImage.findOne({ categoryId: category.id });
+      const { id } = await Category.create({ name, path });
 
-      return res.json({
-        ...category.toJSON(),
-        imagePath: image ? image.imagePath : category.path,
-      });
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
+      return response.json({ id, name });
+    } catch (err) {
+      console.log(err);
     }
   }
 
-  async update(req, res) {
-    try {
-      const { id } = req.params;
-      const { name } = req.body;
+  async index(request, response) {
+    const category = await Category.findAll();
 
-      await categoryUpdateSchema.validate({ name, path: req.file ? 'ok' : '' });
+    return response.json(category);
+  }
+
+  async update(request, response) {
+    try {
+      const schema = Yup.object().shape({
+        name: Yup.string(),
+      });
+
+      try {
+        schema.validateSync(request.body, { abortEarly: false });
+      } catch (err) {
+        return response.status(400).json({ error: err.errors });
+      }
+
+      const { admin: isAdmin } = await User.findByPk(request.userId);
+
+      if (!isAdmin) {
+        return response.status(401).json();
+      }
+
+      const { name } = request.body;
+
+      const { id } = request.params;
 
       const category = await Category.findByPk(id);
 
       if (!category) {
-        return res.status(400).json({ message: 'Categoria não encontrada' });
+        return response
+          .status(401)
+          .json({ error: 'Make sure your category id is correct' });
       }
 
-      let pathUpdate = category.path;
-
-      // ✅ SE HOUVER NOVO ARQUIVO, ATUALIZAR
-      if (req.file) {
-        pathUpdate = `/uploads/${req.file.filename}`;
-
-        // ✅ ATUALIZAR IMAGEM NO MONGODB
-        await CategoryImage.findOneAndUpdate(
-          { categoryId: category.id },
-          {
-            imagePath: pathUpdate,
-            mimeType: req.file.mimetype,
-          },
-          { upsert: true }
-        );
+      let path;
+      if (request.file) {
+        path = request.file.filename;
       }
 
-      await category.update({
-        name: name || category.name,
-        path: pathUpdate,
-      });
+      await Category.update({ name, path }, { where: { id } });
 
-      return res.json({
-        ...category.toJSON(),
-        imagePath: pathUpdate,
-      });
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  }
-
-  async delete(req, res) {
-    try {
-      const { id } = req.params;
-
-      const category = await Category.findByPk(id);
-
-      if (!category) {
-        return res.status(404).json({ message: 'Categoria não encontrada' });
-      }
-
-      // ✅ DELETAR IMAGEM DO MONGODB
-      await CategoryImage.findOneAndDelete({ categoryId: category.id });
-
-      // ✅ DELETAR ARQUIVO DO SERVIDOR
-      if (category.path) {
-        const filePath = path.join(process.cwd(), 'uploads', category.path.split('/').pop());
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-      }
-
-      await category.destroy();
-
-      return res.status(204).send();
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
+      return response.status(200).json();
+    } catch (err) {
+      console.log(err);
     }
   }
 }

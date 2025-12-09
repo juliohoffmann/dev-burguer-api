@@ -1,36 +1,53 @@
-import Sequelize from 'sequelize';
+// src/database/index.js
 import mongoose from 'mongoose';
-import Category from '../app/models/Category.js';
-import Offer from '../app/models/Offer.js';
+import Sequelize from 'sequelize';
 import Product from '../app/models/Product.js';
 import User from '../app/models/User.js';
-import dbConfig from '../config/database.cjs';
+import Category from '../app/models/Category.js';
+import configDatabase from '../config/database.js';
 
-const sequelize = new Sequelize(dbConfig);
-const models = [User, Product, Category, Offer];
+const models = [User, Product, Category];
 
-models.forEach((model) => {
-  model.init(sequelize);
-});
-
-Object.values(sequelize.models).forEach((model) => {
-  if (model.associate) {
-    model.associate(sequelize.models);
+class Database {
+  constructor() {
+    this.initSequelize(); // Renomeado para clareza
+    this.initMongo();    // Renomeado para clareza
   }
-});
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dev-burger');
+  initSequelize() {
+    this.connection = new Sequelize(configDatabase);
 
-export default sequelize;
+    models
+      .map((model) => model.init(this.connection))
+      .map(
+        (model) => model.associate && model.associate(this.connection.models),
+      );
 
+    console.log('Sequelize models initialized and associated.');
+  }
 
+  async initMongo() {
+    const mongoUri = process.env.MONGO_URL;
 
+    if (!mongoUri) {
+      console.error('Erro: Variável de ambiente MONGO_URL não definida no .env. A conexão com o MongoDB não será estabelecida.');
+      return;
+    }
 
+    try {
+      this.mongoConnection = await mongoose.connect(mongoUri, {
+        // REMOVA ESTAS DUAS LINHAS:
+        // useNewUrlParser: true,
+        // useUnifiedTopology: true,
+      });
+      console.log('MongoDB conectado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao conectar ao MongoDB:', error.message);
+    }
+  }
+}
 
-
-
-
-
+export default new Database();
 
 
 

@@ -1,8 +1,9 @@
-import './database/index.js'; // ✅ IMPORTAR PRIMEIRO!
+import 'dotenv/config';
+import './database/index.js';
 import app from './app.js';
 
-const PORT = process.env.PORT || 3001;
+// Use APP_PORT do seu .env, ou 3001 como fallback
+const PORT = process.env.APP_PORT || 3001;
 
-app.listen(PORT, () => {
-  console.log(`✅ Servidor rodando na porta ${PORT}`);
-});
+// Use a variável PORT (maiúscula) aqui
+app.listen(PORT, () => console.log(`🚀 App is running at port ${PORT}...`));
