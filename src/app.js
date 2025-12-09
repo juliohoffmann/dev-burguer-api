@@ -1,17 +1,39 @@
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import routes from './routes.js';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import cors from 'cors';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import './database/index.js';
 
-const app = express();
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, '../uploads')));
+class App {
+  constructor() {
+    this.app = express();
 
-app.use(routes);
+    this.app.use(cors());
 
-export default app;
+    this.middlewares();
+    this.routes();
+  }
 
+  middlewares() {
+    this.app.use(express.json());
+    this.app.use(
+      '/product-file',
+      express.static(resolve(__dirname, '..', 'uploads')),
+    );
+
+    this.app.use(
+      '/category-file',
+      express.static(resolve(__dirname, '..', 'uploads')),
+    );
+  }
+
+  routes() {
+    this.app.use(routes);
+  }
+}
+
+export default new App().app;

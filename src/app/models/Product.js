@@ -1,57 +1,36 @@
-// src/app/models/Product.js
-import { DataTypes, Model } from 'sequelize';
+    // src/app/models/Product.js
+    import Sequelize, { Model } from 'sequelize';
 
-class Product extends Model {
-  static init(sequelize) {
-    super.init(
-      {
-        id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-        },
-        name: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
-        price: {
-          type: DataTypes.DECIMAL(10, 2),
-          allowNull: false,
-        },
-        path: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
-        offer: {
-          type: DataTypes.BOOLEAN,
-          defaultValue: false,
-          allowNull: false,
-        },
-        category_id: {
-          type: DataTypes.UUID,
-          allowNull: false,
-          references: {
-            model: 'categories',
-            key: 'id',
+    class Product extends Model {
+      static init(sequelize) {
+        super.init(
+          {
+            name: Sequelize.STRING,
+            description: Sequelize.STRING, // Adicionado
+            price: Sequelize.DECIMAL(10, 2), // Corrigido
+            image: Sequelize.STRING,      // Adicionado
+            path: Sequelize.STRING,       // Adicionado
+            offer: Sequelize.BOOLEAN,     // Adicionado
+            url: {
+              type: Sequelize.VIRTUAL,
+              get() {
+                return `http://localhost:3001/product-file/${this.path}`;
+              },
+            },
           },
-        },
-      },
-      {
-        sequelize,
-        tableName: 'products',
-        timestamps: true,
-        underscored: true,
+          {
+            sequelize,
+            underscored: true,
+            tableName: 'products',
+          },
+        );
+        return this;
       }
-    );
-    return this;
-  }
-
-  static associate(models) {
-    this.belongsTo(models.Category, {
-      foreignKey: 'category_id',
-      as: 'category',
-    });
-  }
-}
-
-export default Product;
+      static associate(models) {
+        this.belongsTo(models.Category, {
+          foreignKey: 'category_id',
+          as: 'category',
+        });
+      }
+    }
+    export default Product;

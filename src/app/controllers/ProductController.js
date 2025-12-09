@@ -1,141 +1,113 @@
-// src/app/controllers/ProductController.js
+import * as Yup from 'yup';
 import Product from '../models/Product.js';
-import { productCreateSchema, productUpdateSchema } from '../schemas/ProductSchema.js';
+import Category from '../models/Category.js';
+import User from '../models/User.js';
 
 class ProductController {
-  async index(req, res) {
+  async store(request, response) {
     try {
-      const products = await Product.findAll({
-        include: {
-          association: 'category',
-          attributes: ['id', 'name'],
-        },
+      const schema = Yup.object().shape({
+        name: Yup.string().required(),
+        price: Yup.number().required(),
+        category_id: Yup.number().required(),
+        offer: Yup.boolean(),
       });
 
-      // ✅ CONVERTA price para número
-      const productsFormatted = products.map(product => ({
-        ...product.toJSON(),
-        price: Number(product.price),
-      }));
-
-      return res.json(productsFormatted);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  }
-
-  async store(req, res) {
-    try {
-      const { name, price, category_id } = req.body;
-      const file = req.file;
-
-      await productCreateSchema.validate({ name, price, category_id, path: file ? 'ok' : '' });
-
-      if (!file) {
-        return res.status(400).json({ message: 'Imagem é obrigatória' });
+      try {
+        schema.validateSync(request.body, { abortEarly: false });
+      } catch (err) {
+        return response.status(400).json({ error: err.errors });
       }
 
-      const path = `http://localhost:3001/${file.filename}`;
+      const { admin: isAdmin } = await User.findByPk(request.userId);
+
+      if (!isAdmin) {
+        return response.status(401).json();
+      }
+
+      const { filename: path } = request.file;
+      const { name, price, category_id, offer } = request.body;
 
       const product = await Product.create({
         name,
-        price: parseFloat(price),
+        price,
         category_id,
         path,
+        offer,
       });
 
-      // ✅ CONVERTA price para número no retorno
-      const productFormatted = {
-        ...product.toJSON(),
-        price: Number(product.price),
-      };
-
-      return res.status(201).json(productFormatted);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
+      return response.json(product);
+    } catch (err) {
+      console.log(err);
     }
   }
 
-  async show(req, res) {
-    try {
-      const { id } = req.params;
-
-      const product = await Product.findByPk(id, {
-        include: {
-          association: 'category',
+  async index(request, response) {
+    const products = await Product.findAll({
+      include: [
+        {
+          model: Category,
+          as: 'category',
           attributes: ['id', 'name'],
         },
-      });
+      ],
+    });
 
-      if (!product) {
-        return res.status(404).json({ message: 'Produto não encontrado' });
-      }
-
-      // ✅ CONVERTA price para número
-      const productFormatted = {
-        ...product.toJSON(),
-        price: Number(product.price),
-      };
-
-      return res.json(productFormatted);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
+    return response.json(products);
   }
 
-  async update(req, res) {
+  async update(request, response) {
     try {
-      const { id } = req.params;
-      const { name, price, category_id } = req.body;
+      const schema = Yup.object().shape({
+        name: Yup.string(),
+        price: Yup.number(),
+        category_id: Yup.number(),
+        offer: Yup.boolean(),
+      });
 
-      await productUpdateSchema.validate({ name, price, category_id, path: req.file ? 'ok' : '' });
+      try {
+        schema.validateSync(request.body, { abortEarly: false });
+      } catch (err) {
+        return response.status(400).json({ error: err.errors });
+      }
+
+      const { admin: isAdmin } = await User.findByPk(request.userId);
+
+      if (!isAdmin) {
+        return response.status(401).json();
+      }
+
+      const { id } = request.params;
 
       const product = await Product.findByPk(id);
 
       if (!product) {
-        return res.status(404).json({ message: 'Produto não encontrado' });
+        return response
+          .status(401)
+          .json({ error: 'Make sure your product ID is correct' });
       }
 
-      let path = product.path;
-
-      if (req.file) {
-        path = `http://localhost:3001/${req.file.filename}`;
+      let path;
+      if (request.file) {
+        path = request.file.filename;
       }
 
-      await product.update({
-        name: name || product.name,
-        price: price ? parseFloat(price) : product.price,
-        category_id: category_id || product.category_id,
-        path,
-      });
+      const { name, price, category_id, offer } = request.body;
 
-      // ✅ CONVERTA price para número no retorno
-      const productFormatted = {
-        ...product.toJSON(),
-        price: Number(product.price),
-      };
+      await Product.update(
+        {
+          name,
+          price,
+          category_id,
+          path,
+          offer,
+        },
+        { where: { id } },
+      );
 
-      return res.json(productFormatted);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-  }
-
-  async delete(req, res) {
-    try {
-      const { id } = req.params;
-
-      const product = await Product.findByPk(id);
-
-      if (!product) {
-        return res.status(404).json({ message: 'Produto não encontrado' });
-      }
-
-      await product.destroy();
-
-      return res.status(204).send();
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
+      return response.status(200).json();
+    } catch (err) {
+      console.log(err);
     }
   }
 }

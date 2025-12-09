@@ -1,42 +1,38 @@
 import { Router } from 'express';
+import multer from 'multer';
+import multerConfig from './config/multer.js';
 
-import OrderController from './app/controllers/OrderController.js';
-import UserController from './app/controllers/UserController.js';
+import ProductController from './app/controllers/ProductController.js';
 import SessionController from './app/controllers/SessionController.js';
 import CategoryController from './app/controllers/CategoryController.js';
-import ProductController from './app/controllers/ProductController.js';
-import OfferController from './app/controllers/OfferController.js';
+import UserController from './app/controllers/UserController.js';
+import OrderController from './app/controllers/OrderController.js';
+import CreatePaymentIntentController from './app/controllers/stripe/CreatePaymentIntentController.js';
 
-import adminMiddleware from './app/middlewares/adminMiddleware.js';
-import upload from './config/multer.js';
+import authMiddleware from './app/middlewares/auth.js';
 
-const routes = Router();
+const upload = multer(multerConfig);
 
-// ✅ ROTAS DE USUÁRIOS
-routes.post('/users', UserController.store);
-routes.post('/sessions', SessionController.store);
+const routes = new Router();
 
-// ✅ ROTAS DE CATEGORIAS (apenas admin)
-routes.post('/categories', adminMiddleware, upload.single('image'), CategoryController.store);
-routes.get('/s/:id', adminMiddleware, CategoryController.delete);
+routes.post('/users', UserController.store); // Cadastro
 
-// ✅ ROTAS DE PRODUTOS (apenas admin pode criar/editar/deletar)
-routes.post('/products', adminMiddleware, upload.single('image'), ProductController.store);
+routes.post('/sessions', SessionController.store); // Login
+
+routes.use(authMiddleware); // será chamado por todas as rotas ABAIXO
+
+routes.post('/products', upload.single('file'), ProductController.store);
 routes.get('/products', ProductController.index);
-routes.get('/products/:id', ProductController.show);
-routes.put('/products/:id', adminMiddleware, upload.single('image'), ProductController.update);
-routes.delete('/products/:id', adminMiddleware, ProductController.delete);
+routes.put('/products/:id', upload.single('file'), ProductController.update);
 
-// ✅ ROTAS DE OFERTAS (apenas admin pode criar/editar/deletar)
-routes.post('/offers', adminMiddleware, OfferController.store);
-routes.get('/offers', OfferController.index);
-routes.get('/offers/:id', OfferController.show);
-routes.put('/offers/:id', adminMiddleware, OfferController.update);
-routes.delete('/offers/:id', adminMiddleware, OfferController.delete);
+routes.post('/categories', upload.single('file'), CategoryController.store);
+routes.get('/categories', CategoryController.index);
+routes.put('/categories/:id', upload.single('file'), CategoryController.update);
 
-routes.post('/order', OrderController.store);
-routes.get('/orders',  OrderController.index);
-routes.put('/orders', adminMiddleware, OrderController.update);
+routes.post('/orders', OrderController.store);
+routes.put('/orders/:id', OrderController.update);
+routes.get('/orders', OrderController.index);
+
+routes.post('/create-payment-intent', CreatePaymentIntentController.store);
 
 export default routes;
-

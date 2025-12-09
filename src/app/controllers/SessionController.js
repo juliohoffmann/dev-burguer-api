@@ -1,67 +1,49 @@
-// src/app/controllers/SessionController.js
-import bcrypt from 'bcrypt';
+import * as Yup from 'yup';
 import jwt from 'jsonwebtoken';
+import authConfig from '../../config/auth.js';
 import User from '../models/User.js';
-import { sessionCreateSchema } from '../schemas/SessionSchema.js';
 
 class SessionController {
   async store(request, response) {
-    try {
-      const { email, password_hash } = request.body;
+    const schema = Yup.object().shape({
+      email: Yup.string().email().required(),
+      password: Yup.string().required(),
+    });
 
-      // Valida com Yup
-      await sessionCreateSchema.validate({ email, password_hash });
+    const userEmailOrPasswordIncorrect = () => {
+      return response
+        .status(401)
+        .json({ error: 'Make sure your password or email are correct' });
+    };
 
-      // Busca o usuário pelo email
-      const user = await User.findOne({
-        where: {
-          email,
-        },
-      });
-
-      if (!user) {
-        return response.status(401).json({
-          message: 'Email ou senha incorretos!',
-        });
-      }
-
-      // Compara a senha digitada com o hash armazenado
-      const passwordMatch = await bcrypt.compare(password_hash, user.password_hash);
-
-      if (!passwordMatch) {
-        return response.status(401).json({
-          message: 'Email ou senha incorretos!',
-        });
-      }
-
-      // Gera o token JWT COM admin
-      const token = jwt.sign(
-        { 
-          id: user.id, 
-          email: user.email,
-          admin: user.admin  // ✅ ADICIONE AQUI
-        },
-        process.env.JWT_SECRET || 'seu_secret_key_aqui',
-        { expiresIn: '7d' }
-      );
-
-      return response.status(200).json({
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          admin: user.admin,
-        },
-      });
-    } catch (error) {
-      return response.status(400).json({
-        message: error.message,
-      });
+    if (!(await schema.isValid(request.body))) {
+      userEmailOrPasswordIncorrect();
     }
+
+    const { email, password } = request.body;
+
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      userEmailOrPasswordIncorrect();
+    }
+
+    if (!(await user.checkPassword(password))) {
+      userEmailOrPasswordIncorrect();
+    }
+
+    return response.json({
+      id: user.id,
+      email,
+      name: user.name,
+      admin: user.admin,
+      token: jwt.sign({ id: user.id, name: user.name }, authConfig.secret, {
+        expiresIn: authConfig.expiresIn,
+      }),
+    });
   }
 }
 
-export default new SessionController();
-
-
+export default new SessionController();// <-- Exportando uma INSTÂNCIA

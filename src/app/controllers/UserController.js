@@ -1,115 +1,43 @@
-// src/app/controllers/UserController.js
-// biome-ignore assist/source/organizeImports: imports are manually organized
 import { v4 } from 'uuid';
-import bcrypt from 'bcrypt';
+import * as Yup from 'yup';
+
 import User from '../models/User.js';
-import { userCreateSchema, userUpdateSchema } from '../schemas/UserSchema.js';
 
 class UserController {
   async store(request, response) {
+    const schema = Yup.object().shape({
+      name: Yup.string().required(),
+      email: Yup.string().email().required(),
+      password: Yup.string().required().min(6),
+      admin: Yup.boolean(),
+    });
+
     try {
-      const { name, email, password_hash, admin } = request.body;  // ✅ MUDE PARA password_hash
-      await userCreateSchema.validate({ name, email, password_hash, admin });
-
-      const existingUser = await User.findOne({
-        where: { email },
-      });
-
-      if (existingUser) {
-        return response.status(400).json({ 
-          message: 'Este e-mail já está cadastrado!' 
-        });
-      }
-
-      const hashedPassword = await bcrypt.hash(password_hash, 10);  // ✅ MUDE PARA password_hash
-      const user = await User.create({
-        id: v4(),
-        name,
-        email,
-        password_hash: hashedPassword,
-        admin: admin || false,
-      });
-
-      return response.status(201).json({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        admin: user.admin,
-      });
-    } catch (error) {
-      return response.status(400).json({ 
-        message: error.message 
-      });
+      schema.validateSync(request.body, { abortEarly: false });
+    } catch (err) {
+      return response.status(400).json({ error: err.errors });
     }
-  }
 
-  async index(request, response) {
-    try {
-      const users = await User.findAll();
-      return response.json(users);
-    } catch (error) {
-      return response.status(400).json({ 
-        message: error.message 
-      });
+    const { name, email, password, admin } = request.body;
+
+    const userExists = await User.findOne({
+      where: { email },
+    });
+
+    if (userExists) {
+      return response.status(409).json({ error: 'User already exists' });
     }
-  }
 
-  async show(request, response) {
-    try {
-      const { id } = request.params;
-      const user = await User.findByPk(id);
+    const user = await User.create({
+      id: v4(),
+      name,
+      email,
+      password,
+      admin,
+    });
 
-      if (!user) {
-        return response.status(404).json({ error: 'User not found' });
-      }
-
-      return response.json(user);
-    } catch (error) {
-      return response.status(400).json({ 
-        message: error.message 
-      });
-    }
-  }
-
-  async update(request, response) {
-    try {
-      const { id } = request.params;
-      const { name, email, admin } = request.body;
-      await userUpdateSchema.validate({ name, email, admin });
-
-      const user = await User.findByPk(id);
-
-      if (!user) {
-        return response.status(404).json({ error: 'User not found' });
-      }
-
-      await user.update({ name, email, admin });
-      return response.json(user);
-    } catch (error) {
-      return response.status(400).json({ 
-        message: error.message 
-      });
-    }
-  }
-
-  async delete(request, response) {
-    try {
-      const { id } = request.params;
-      const user = await User.findByPk(id);
-
-      if (!user) {
-        return response.status(404).json({ error: 'User not found' });
-      }
-
-      await user.destroy();
-      return response.status(204).send();
-    } catch (error) {
-      return response.status(400).json({ 
-        message: error.message 
-      });
-    }
+    return response.status(201).json({ id: user.id, name, email, admin });
   }
 }
 
 export default new UserController();
-
