@@ -4,13 +4,14 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 
-import './database/index.js';
+
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 class App {
   constructor() {
     this.app = express();
+    this.app.disable('etag');
 
     this.app.use(cors());
 

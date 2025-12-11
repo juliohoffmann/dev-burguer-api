@@ -1,3 +1,4 @@
+
 import jwt from 'jsonwebtoken';
 import authConfig from '../../config/auth.js';
 
@@ -11,7 +12,7 @@ export default (request, response, next) => {
   const [, token] = authToken.split(' ');
 
   try {
-    jwt.verify(token, authConfig.secret, function (err, decoded) {
+   jwt.verify(token, authConfig.secret, (err, decoded) => {
       if (err) {
         throw new Error();
       }

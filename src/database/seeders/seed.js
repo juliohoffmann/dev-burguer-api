@@ -1,119 +1,172 @@
 // src/database/seeders/seed.js
-import 'dotenv/config';
+// Este arquivo será o seu ponto de entrada para executar todos os seeds.
+
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
+import Database from '../index.js'; // Importa a instância da classe Database
 
-// Importe sua configuração de banco de dados e modelos
-import '../index.js';
+async function runSeeds() {
+  // Declara sequelizeConnection fora do try para que esteja acessível no finally
+  let sequelizeConnection;
 
-import User from '../../app/models/User.js';
-import Category from '../../app/models/Category.js';
-import Product from '../../app/models/Product.js';
-// import Offer from '../../app/models/Offer.js'; // Se você tiver um modelo Offer
-
-// Importa os dados dos seus arquivos (ESTAS SÃO AS FONTES DE DADOS QUE VAMOS USAR)
-import { products } from '../../data/products.js';
-import { categories } from '../../data/categories.js';
-
-
-async function seed() {
   try {
-    console.log('Iniciando o processo de seeding...');
+    console.log('Iniciando a execução dos seeds...');
 
-    // --- Seeding de Usuários ---
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    await User.findOrCreate({
-      where: { email: 'admin@example.com' },
-      defaults: {
+    // Acesse a conexão do Sequelize através da instância da Database
+    sequelizeConnection = Database.connection;
+
+    // Autentica a conexão com o banco de dados
+    await sequelizeConnection.authenticate();
+    console.log('Conexão com o banco de dados estabelecida.');
+
+    // --- SEED DE CATEGORIAS ---
+    console.log('\n--- Executando seed de categorias ---');
+
+    const categoriesToInsert = [
+      { name: 'Lanches', path: 'lanches.png' }, // CORRIGIDO: 'image' para 'path'
+      { name: 'Pizzas', path: 'pizzas.png' },
+      { name: 'Bebidas', path: 'bebidas.png' },
+      { name: 'Sobremesas', path: 'sobremesas.png' },
+      { name: 'Acompanhamentos', path: 'acompanhamentos.png' },
+    ];
+
+    const existingCategories = await sequelizeConnection.query(
+      `SELECT name FROM categories WHERE name IN (${categoriesToInsert.map(c => `'${c.name}'`).join(',')});`,
+      { type: sequelizeConnection.QueryTypes.SELECT }
+    );
+
+    const newCategories = categoriesToInsert.filter(
+      (cat) => !existingCategories.some((existing) => existing.name === cat.name)
+    );
+
+    if (newCategories.length > 0) {
+      const categoriesData = newCategories.map((cat) => ({
         id: uuidv4(),
-        name: 'Admin User',
-        email: 'admin@example.com',
-        password_hash: hashedPassword,
-        admin: true,
-      },
-    });
-    console.log('Usuário admin criado/verificado.');
+        name: cat.name,
+        path: cat.path, // CORRIGIDO: 'image' para 'path' aqui também
+        created_at: new Date(),
+        updated_at: new Date(),
+      }));
 
-    // --- Seeding de Categorias ---
-    const createdCategories = [];
-    for (const categoryData of categories) { // Itera sobre as categorias IMPORTADAS de data/categories.js
-      const fileName = categoryData.file.split('/').pop(); // Extrai o nome do arquivo (ex: 'category_1.png')
-
-      const [category] = await Category.findOrCreate({
-        where: { name: categoryData.name },
-        defaults: {
-          id: uuidv4(),
-          name: categoryData.name,
-          path: fileName, // Mapeia 'file' para 'path'
-        },
-      });
-      createdCategories.push(category);
+      await sequelizeConnection.getQueryInterface().bulkInsert('categories', categoriesData, {});
+      console.log(`Categorias inseridas: ${newCategories.map(c => c.name).join(', ')}`);
+    } else {
+      console.log('Todas as categorias já existem. Nenhuma categoria nova inserida.');
     }
-    console.log('Categorias criadas/verificadas.');
+    console.log('--- Seed de categorias concluído ---\n');
 
-    // --- Seeding de Produtos ---
-    // Criar um mapa de nomes de categoria para seus UUIDs
-    const categoryNameToIdMap = {};
-    createdCategories.forEach(cat => {
-      categoryNameToIdMap[cat.name] = cat.id;
-    });
+    // --- SEED DE PRODUTOS ---
+    console.log('\n--- Executando seed de produtos ---');
 
-    // Mapeamento de IDs numéricos para nomes de categoria (baseado nos seus dados)
-    // Você precisa preencher este mapeamento com base no que o category_id numérico
-    // no seu products.js representa em termos de nome de categoria.
-    // Exemplo: se category_id 5 significa 'Sobremesas'.
-    const numericCategoryIdToNameMap = {
-      // Pelo seu products.js, category_id 5 é para Sobremesas
-      5: 'Sobremesas',
-      // Adicione outros mapeamentos conforme necessário para seus produtos
-      // Ex: 1: 'Entradas', 2: 'Hambúrgueres', 3: 'Bebidas', etc.
+    // Primeiro, vamos buscar os IDs das categorias que já existem no banco de dados
+    const categories = await sequelizeConnection.query(
+      `SELECT id, name FROM categories;`,
+      { type: sequelizeConnection.QueryTypes.SELECT },
+    );
+
+    const getCategoryId = (categoryName) => {
+      const category = categories.find((cat) => cat.name === categoryName);
+      if (!category) {
+        console.warn(`Categoria "${categoryName}" não encontrada. Produtos associados a ela podem ser pulados.`);
+      }
+      return category ? category.id : null;
     };
 
+    const productsToSeed = [
+      {
+        name: 'X-Burger',
+        description: 'Delicioso X-Burger com carne, queijo, alface e tomate.',
+        price: 18.50,
+        image: 'x-burger.png',
+        offer: false,
+        categoryName: 'Lanches',
+      },
+      {
+        name: 'Batata Frita',
+        description: 'Porção generosa de batata frita crocante.',
+        price: 12.00,
+        image: 'batata-frita.png',
+        offer: true,
+        categoryName: 'Acompanhamentos',
+      },
+      {
+        name: 'Coca-Cola',
+        description: 'Refrigerante Coca-Cola lata 350ml.',
+        price: 7.00,
+        image: 'coca-cola.png',
+        offer: false,
+        categoryName: 'Bebidas',
+      },
+      {
+        name: 'Milkshake de Chocolate',
+        description: 'Milkshake cremoso de chocolate.',
+        price: 15.00,
+        image: 'milkshake-chocolate.png',
+        offer: true,
+        categoryName: 'Sobremesas',
+      },
+      {
+        name: 'Pizza Calabresa',
+        description: 'Pizza de calabresa com cebola e queijo.',
+        price: 45.00,
+        image: 'pizza-calabresa.png',
+        offer: false,
+        categoryName: 'Pizzas',
+      },
+      // Adicione mais produtos aqui
+    ];
 
-    for (const productData of products) { // Itera sobre os produtos IMPORTADOS de data/products.js
-      const fileName = productData.file.split('/').pop(); // Extrai o nome do arquivo
-      const fullImageUrl = `http://localhost:3001/product-file/${fileName}`; // URL completa para 'image'
+    const productsToInsert = [];
+    for (const product of productsToSeed) {
+      const category_id = getCategoryId(product.categoryName);
 
-      // Obter o nome da categoria a partir do ID numérico
-      const categoryName = numericCategoryIdToNameMap[productData.category_id];
-      let categoryUuid = null;
+      if (category_id) {
+        // Verifica se o produto já existe para evitar duplicatas
+        const existingProduct = await sequelizeConnection.query(
+          `SELECT id FROM products WHERE name = :name;`,
+          {
+            replacements: { name: product.name },
+            type: sequelizeConnection.QueryTypes.SELECT
+          }
+        );
 
-      if (categoryName) {
-        // Obter o UUID da categoria a partir do nome
-        categoryUuid = categoryNameToIdMap[categoryName];
+        if (existingProduct.length === 0) {
+          productsToInsert.push({
+            id: uuidv4(),
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            image: product.image,
+            offer: product.offer,
+            category_id: category_id,
+            created_at: new Date(),
+            updated_at: new Date(),
+          });
+        } else {
+          console.log(`Produto "${product.name}" já existe. Pulando.`);
+        }
+      } else {
+        console.warn(`Produto "${product.name}" não será inserido pois a categoria "${product.categoryName}" não foi encontrada.`);
       }
-
-      // Fallback se a categoria não for encontrada ou mapeada
-      if (!categoryUuid) {
-        console.warn(`Skipping product "${productData.name}" because category ID ${productData.category_id} (name: ${categoryName || 'N/A'}) was not found or mapped.`);
-        continue; // Pula para o próximo produto se a categoria não for encontrada
-      }
-
-      await Product.findOrCreate({
-        where: { name: productData.name },
-        defaults: {
-          id: uuidv4(),
-          name: productData.name,
-          description: 'Descrição padrão para ' + productData.name, // Adicione uma descrição padrão
-          price: productData.price / 100, // Converte centavos para decimal (ex: 890 -> 8.90)
-          category_id: categoryUuid,
-          image: fullImageUrl,
-          path: fileName,
-          offer: productData.offer,
-        },
-      });
     }
-    console.log('Produtos criados/verificados.');
 
-    // --- Seeding de Ofertas (se você tiver) ---
-    // ... (Seu código para ofertas, se houver)
+    if (productsToInsert.length > 0) {
+      await sequelizeConnection.getQueryInterface().bulkInsert('products', productsToInsert, {});
+      console.log(`Produtos inseridos: ${productsToInsert.map(p => p.name).join(', ')}`);
+    } else {
+      console.log('Nenhum produto novo para inserir.');
+    }
+    console.log('--- Seed de produtos concluído ---\n');
 
-    console.log('Seeding concluído com sucesso!');
+    console.log('Todos os seeds foram executados com sucesso!');
   } catch (error) {
-    console.error('Erro durante o seeding:', error);
+    console.error('Erro ao executar os seeds:', error);
   } finally {
-    process.exit(0);
+    // CORRIGIDO: Garante que sequelizeConnection está definida antes de tentar fechar
+    if (sequelizeConnection) {
+      await sequelizeConnection.close();
+      console.log('Conexão com o banco de dados fechada.');
+    }
   }
 }
 
-seed();
+runSeeds();

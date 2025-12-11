@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "seed": "node src/database/seeders/seed.js"
-    
   },
   "type": "module",
   "keywords": [],
