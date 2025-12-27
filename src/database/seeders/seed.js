@@ -1,172 +1,106 @@
-// src/database/seeders/seed.js
-// Este arquivo será o seu ponto de entrada para executar todos os seeds.
+// seed-devburger-api/src/index.js (ou seed.js, dependendo do nome do seu arquivo principal do seed)
+import axios from 'axios';
+import FormData from 'form-data';
+import fs from 'node:fs';
+import { config } from './config.js';
+import { products } from './data/products.js';
+import { categories } from './data/categories.js';
 
-import { v4 as uuidv4 } from 'uuid';
-import Database from '../index.js'; // Importa a instância da classe Database
+const api = axios.create({
+  baseURL: config.apiUrl,
+  headers: {
+    Authorization: `Bearer ${config.userToken}`,
+  },
+});
 
-async function runSeeds() {
-  // Declara sequelizeConnection fora do try para que esteja acessível no finally
-  let sequelizeConnection;
+async function seed() {
+  console.log('Iniciando seed...');
 
-  try {
-    console.log('Iniciando a execução dos seeds...');
+  // Objeto para mapear nomes de categoria para seus IDs reais
+  const categoryIdMap = {};
 
-    // Acesse a conexão do Sequelize através da instância da Database
-    sequelizeConnection = Database.connection;
-
-    // Autentica a conexão com o banco de dados
-    await sequelizeConnection.authenticate();
-    console.log('Conexão com o banco de dados estabelecida.');
-
-    // --- SEED DE CATEGORIAS ---
-    console.log('\n--- Executando seed de categorias ---');
-
-    const categoriesToInsert = [
-      { name: 'Lanches', path: 'lanches.png' }, // CORRIGIDO: 'image' para 'path'
-      { name: 'Pizzas', path: 'pizzas.png' },
-      { name: 'Bebidas', path: 'bebidas.png' },
-      { name: 'Sobremesas', path: 'sobremesas.png' },
-      { name: 'Acompanhamentos', path: 'acompanhamentos.png' },
-    ];
-
-    const existingCategories = await sequelizeConnection.query(
-      `SELECT name FROM categories WHERE name IN (${categoriesToInsert.map(c => `'${c.name}'`).join(',')});`,
-      { type: sequelizeConnection.QueryTypes.SELECT }
-    );
-
-    const newCategories = categoriesToInsert.filter(
-      (cat) => !existingCategories.some((existing) => existing.name === cat.name)
-    );
-
-    if (newCategories.length > 0) {
-      const categoriesData = newCategories.map((cat) => ({
-        id: uuidv4(),
-        name: cat.name,
-        path: cat.path, // CORRIGIDO: 'image' para 'path' aqui também
-        created_at: new Date(),
-        updated_at: new Date(),
-      }));
-
-      await sequelizeConnection.getQueryInterface().bulkInsert('categories', categoriesData, {});
-      console.log(`Categorias inseridas: ${newCategories.map(c => c.name).join(', ')}`);
-    } else {
-      console.log('Todas as categorias já existem. Nenhuma categoria nova inserida.');
-    }
-    console.log('--- Seed de categorias concluído ---\n');
-
-    // --- SEED DE PRODUTOS ---
-    console.log('\n--- Executando seed de produtos ---');
-
-    // Primeiro, vamos buscar os IDs das categorias que já existem no banco de dados
-    const categories = await sequelizeConnection.query(
-      `SELECT id, name FROM categories;`,
-      { type: sequelizeConnection.QueryTypes.SELECT },
-    );
-
-    const getCategoryId = (categoryName) => {
-      const category = categories.find((cat) => cat.name === categoryName);
-      if (!category) {
-        console.warn(`Categoria "${categoryName}" não encontrada. Produtos associados a ela podem ser pulados.`);
-      }
-      return category ? category.id : null;
-    };
-
-    const productsToSeed = [
-      {
-        name: 'X-Burger',
-        description: 'Delicioso X-Burger com carne, queijo, alface e tomate.',
-        price: 18.50,
-        image: 'x-burger.png',
-        offer: false,
-        categoryName: 'Lanches',
-      },
-      {
-        name: 'Batata Frita',
-        description: 'Porção generosa de batata frita crocante.',
-        price: 12.00,
-        image: 'batata-frita.png',
-        offer: true,
-        categoryName: 'Acompanhamentos',
-      },
-      {
-        name: 'Coca-Cola',
-        description: 'Refrigerante Coca-Cola lata 350ml.',
-        price: 7.00,
-        image: 'coca-cola.png',
-        offer: false,
-        categoryName: 'Bebidas',
-      },
-      {
-        name: 'Milkshake de Chocolate',
-        description: 'Milkshake cremoso de chocolate.',
-        price: 15.00,
-        image: 'milkshake-chocolate.png',
-        offer: true,
-        categoryName: 'Sobremesas',
-      },
-      {
-        name: 'Pizza Calabresa',
-        description: 'Pizza de calabresa com cebola e queijo.',
-        price: 45.00,
-        image: 'pizza-calabresa.png',
-        offer: false,
-        categoryName: 'Pizzas',
-      },
-      // Adicione mais produtos aqui
-    ];
-
-    const productsToInsert = [];
-    for (const product of productsToSeed) {
-      const category_id = getCategoryId(product.categoryName);
-
-      if (category_id) {
-        // Verifica se o produto já existe para evitar duplicatas
-        const existingProduct = await sequelizeConnection.query(
-          `SELECT id FROM products WHERE name = :name;`,
-          {
-            replacements: { name: product.name },
-            type: sequelizeConnection.QueryTypes.SELECT
+  // --- Criação de Categorias ---
+  for (const category of categories) {
+    const categoryForm = new FormData();
+    categoryForm.append('name', category.name);
+    categoryForm.append('file', fs.createReadStream(category.file));
+    try {
+      const { data: createdCategory } = await api.post('/categories', categoryForm, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      console.log('Categoria criada:', createdCategory);
+      // Armazena o ID real da categoria criada
+      categoryIdMap[createdCategory.name] = createdCategory.id;
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.error === 'Category already exists') {
+        console.warn(`Aviso: Categoria "${category.name}" já existe. Tentando buscar o ID existente.`);
+        try {
+          // Se a categoria já existe, precisamos fazer uma requisição GET para buscar o ID dela
+          const { data: existingCategories } = await api.get('/categories');
+          const existingCategory = existingCategories.find(cat => cat.name === category.name);
+          if (existingCategory) {
+            categoryIdMap[existingCategory.name] = existingCategory.id;
+            console.log(`ID da categoria existente "${existingCategory.name}": ${existingCategory.id}`);
+          } else {
+            console.error(`Erro: Categoria "${category.name}" existe mas não foi encontrada ao buscar.`);
+            process.exit(1);
           }
-        );
-
-        if (existingProduct.length === 0) {
-          productsToInsert.push({
-            id: uuidv4(),
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            image: product.image,
-            offer: product.offer,
-            category_id: category_id,
-            created_at: new Date(),
-            updated_at: new Date(),
-          });
-        } else {
-          console.log(`Produto "${product.name}" já existe. Pulando.`);
+        } catch (fetchErr) {
+          console.error('Erro ao buscar categoria existente:', fetchErr.response ? fetchErr.response.data : fetchErr.message);
+          process.exit(1);
         }
       } else {
-        console.warn(`Produto "${product.name}" não será inserido pois a categoria "${product.categoryName}" não foi encontrada.`);
+        console.error('Erro ao criar categoria:', err.response ? err.response.data : err.message);
+        process.exit(1); // Sai com erro para outros tipos de erro
       }
     }
+  }
+  console.log('Categorias criadas com sucesso. Mapeamento de IDs:', categoryIdMap);
 
-    if (productsToInsert.length > 0) {
-      await sequelizeConnection.getQueryInterface().bulkInsert('products', productsToInsert, {});
-      console.log(`Produtos inseridos: ${productsToInsert.map(p => p.name).join(', ')}`);
-    } else {
-      console.log('Nenhum produto novo para inserir.');
+  // --- Criação de Produtos ---
+  for (const product of products) {
+    const productForm = new FormData();
+    productForm.append('name', product.name);
+    productForm.append('price', product.price);
+
+    // Adiciona description se existir no objeto product (se seu data/products.js tiver)
+    if (product.description) {
+      productForm.append('description', product.description);
     }
-    console.log('--- Seed de produtos concluído ---\n');
 
-    console.log('Todos os seeds foram executados com sucesso!');
-  } catch (error) {
-    console.error('Erro ao executar os seeds:', error);
-  } finally {
-    // CORRIGIDO: Garante que sequelizeConnection está definida antes de tentar fechar
-    if (sequelizeConnection) {
-      await sequelizeConnection.close();
-      console.log('Conexão com o banco de dados fechada.');
+    // AQUI ESTÁ A MUDANÇA CRÍTICA: Use o ID real da categoria mapeada
+    // Você precisa garantir que cada produto em `products.js` tenha uma propriedade `categoryName`
+    // que corresponda ao nome da categoria (e.g., 'Entradas', 'Hambúrgueres').
+    const realCategoryId = categoryIdMap[product.categoryName];
+    if (realCategoryId) {
+      productForm.append('category_id', realCategoryId);
+    } else {
+      // Se não encontrou o categoryName mapeado, é um erro crítico para o seed
+      console.error(`Erro: Categoria "${product.categoryName}" para o produto "${product.name}" não encontrada no mapeamento. Verifique data/products.js.`);
+      process.exit(1);
+    }
+
+    productForm.append('offer', String(product.offer));
+    productForm.append('file', fs.createReadStream(product.file));
+    try {
+      const { data: createdProduct } = await api.post('/products', productForm, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      console.log('Produto criado:', createdProduct);
+    } catch (err) {
+      console.error('Erro ao criar produto:', err.response ? err.response.data : err.message);
+      process.exit(1);
     }
   }
+  console.log('Produtos criados com sucesso.');
+
+  // --- Atualização de Ofertas (se houver) ---
+  // Se você tiver um seed de ofertas, ele também precisará usar os IDs reais dos produtos.
+  // ...
 }
 
-runSeeds();
+seed();

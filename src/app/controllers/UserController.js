@@ -1,6 +1,8 @@
-import { v4 } from 'uuid';
-import * as Yup from 'yup';
+// src/app/controllers/UserController.js
+// Remova a importação de 'v4' da biblioteca 'uuid', pois não será mais usada para IDs.
+// import { v4 } from 'uuid'; // <-- REMOVA ESTA LINHA
 
+import * as Yup from 'yup';
 import User from '../models/User.js';
 
 class UserController {
@@ -11,7 +13,6 @@ class UserController {
       password: Yup.string().required().min(6),
       admin: Yup.boolean(),
     });
-
     try {
       schema.validateSync(request.body, { abortEarly: false });
     } catch (err) {
@@ -28,16 +29,19 @@ class UserController {
       return response.status(409).json({ error: 'User already exists' });
     }
 
+    // CRUCIAL: NÃO inclua 'id' aqui. Deixe o banco de dados gerá-lo automaticamente.
     const user = await User.create({
-      id: v4(),
       name,
       email,
-      password,
+      password, // O hook 'beforeSave' do modelo cuidará do hash
       admin,
     });
 
+    // Retorne os dados do usuário, incluindo o ID gerado pelo banco de dados
     return response.status(201).json({ id: user.id, name, email, admin });
   }
+
+  // ... (outros métodos como update, index)
 }
 
 export default new UserController();

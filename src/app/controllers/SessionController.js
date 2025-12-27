@@ -17,7 +17,7 @@ class SessionController {
     };
 
     if (!(await schema.isValid(request.body))) {
-      userEmailOrPasswordIncorrect();
+      return userEmailOrPasswordIncorrect(); // Adicionado 'return' aqui para evitar execução posterior
     }
 
     const { email, password } = request.body;
@@ -27,11 +27,11 @@ class SessionController {
     });
 
     if (!user) {
-      userEmailOrPasswordIncorrect();
+      return userEmailOrPasswordIncorrect(); // Adicionado 'return' aqui
     }
 
     if (!(await user.checkPassword(password))) {
-      userEmailOrPasswordIncorrect();
+      return userEmailOrPasswordIncorrect(); // Adicionado 'return' aqui
     }
 
     return response.json({
@@ -39,11 +39,15 @@ class SessionController {
       email,
       name: user.name,
       admin: user.admin,
-      token: jwt.sign({ id: user.id, name: user.name }, authConfig.secret, {
-        expiresIn: authConfig.expiresIn,
-      }),
+      token: jwt.sign(
+        { id: user.id, name: user.name, admin: user.admin }, // <--- CORREÇÃO AQUI: ADICIONE 'admin: user.admin'
+        authConfig.secret,
+        {
+          expiresIn: authConfig.expiresIn,
+        }
+      ),
     });
   }
 }
 
-export default new SessionController();// <-- Exportando uma INSTÂNCIA
+export default new SessionController();

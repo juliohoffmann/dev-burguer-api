@@ -4,14 +4,13 @@ const OrderSchema = new mongoose.Schema(
   {
     user: {
       id: {
-        type: String,
+        type: Number,
         required: true,
       },
       name: {
         type: String,
         required: true,
       },
-      _id: false,
     },
     products: [
       {
@@ -39,7 +38,6 @@ const OrderSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
-        _id: false,
       },
     ],
     status: {
@@ -47,10 +45,7 @@ const OrderSchema = new mongoose.Schema(
       required: true,
     },
   },
-  {
-    timestamps: true,
-    versionKey: false,
-  },
+  { timestamps: true }
 );
 
 export default mongoose.model('Order', OrderSchema);

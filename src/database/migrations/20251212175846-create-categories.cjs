@@ -2,34 +2,35 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('categories', {
       id: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: Sequelize.INTEGER, // ALTERADO: De UUID para INTEGER
         allowNull: false,
+        autoIncrement: true, // Adicionado para IDs numéricos auto-incrementais
         primaryKey: true,
       },
       name: {
         type: Sequelize.STRING,
         allowNull: false,
-        unique: true,
+        unique: true, // Geralmente, nomes de categorias são únicos
+      },
+      path: {
+        type: Sequelize.STRING,
+        allowNull: false,
       },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('now'),
       },
       updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('now'),
       },
     });
   },
 
-  async down(queryInterface) {
+  down: async (queryInterface) => {
     await queryInterface.dropTable('categories');
   },
 };
-

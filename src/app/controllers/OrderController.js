@@ -70,10 +70,30 @@ class OrderController {
   }
 
   async index(request, response) {
-    const orders = await Order.find();
+    try {
+      const orders = await Order.find()
+        .populate('user.id')
+        .sort({ createdAt: -1 });
 
-    return response.json(orders);
-  }
+      const formattedOrders = orders.map((order) => {
+        const orderObj = order.toObject();
+
+        return {
+          _id: orderObj._id,
+          user: orderObj.user,
+          products: orderObj.products || [], // ← garante array
+          status: orderObj.status,
+          createdAt: orderObj.createdAt,
+          updatedAt: orderObj.updatedAt,
+        };
+      });
+
+      return response.json(formattedOrders);
+    } catch (err) { // ← CORRIGIDO: catch
+      console.error('Erro ao buscar pedidos:', err);
+      return response.status(500).json({ error: 'Internal server error' });
+    }
+  } // ← CORRIGIDO: fecha o método index
 
   async update(request, response) {
     const schema = Yup.object().shape({
@@ -101,7 +121,7 @@ class OrderController {
       return response.status(400).json({ error: error.message });
     }
 
-    return response.json({ message: 'Status updated sucessfully' });
+    return response.json({ message: 'Status updated successfully' });
   }
 }
 
