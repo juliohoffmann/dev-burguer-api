@@ -5,113 +5,157 @@ import { resolve } from 'node:path';
 import { unlink } from 'node:fs/promises';
 
 class CategoryController {
-  async store(request, response) {
-    const schema = Yup.object().shape({
-      name: Yup.string().required('O nome da categoria é obrigatório'),
-    });
-
+  async index(req, res) {
     try {
-      await schema.validate(request.body, { abortEarly: false });
-    } catch (err) {
-      return response.status(400).json({ error: err.errors });
-    }
+      const categories = await Category.findAll();
 
-    if (!request.file) {
-      return response.status(400).json({ error: 'Image file is required.' });
-    }
+      // ✅ BUSCAR IMAGENS DO MONGODB
+      const categoriesWithImages = await Promise.all(
+        categories.map(async (category) => {
+          const image = await CategoryImage.findOne({ categoryId: category.id });
+          return {
+            ...category.toJSON(),
+            imagePath: image ? image.imagePath : category.path,
+          };
+        })
+      );
 
-    const { name } = request.body;
-    const path = request.file.filename;
-
-    try {
-      const category = await Category.create({ name, path });
-      return response.status(201).json(category);
+      return res.json(categoriesWithImages);
     } catch (error) {
-      console.error('--- ERRO NO CategoryController.store ---');
-      console.error('Detalhes do erro:', error);
-      console.error('Stack Trace:', error.stack);
-      if (request.file) {
-        const filePath = resolve(request.file.destination, request.file.filename);
-        try {
-          await unlink(filePath);
-          console.log(`Arquivo ${request.file.filename} excluído após erro na criação da categoria.`);
-        } catch (unlinkError) {
-          console.error(`Erro ao excluir arquivo ${request.file.filename}:`, unlinkError);
-        }
-      }
-      return response.status(500).json({ error: 'Internal server error.' });
+      return res.status(400).json({ message: error.message });
     }
   }
 
-  async update(request, response) {
-    const schema = Yup.object().shape({
-      name: Yup.string(),
-    });
-
+  async store(req, res) {
     try {
-      await schema.validate(request.body, { abortEarly: false });
-    } catch (err) {
-      return response.status(400).json({ error: err.errors });
-    }
+      const { name } = req.body;
+      const file = req.file;
 
-    const { id } = request.params;
-    const category = await Category.findByPk(id);
+      await categoryCreateSchema.validate({ name, path: file ? 'ok' : '' });
 
-    if (!category) {
-      if (request.file) {
-        const filePath = resolve(request.file.destination, request.file.filename);
-        await unlink(filePath);
+      if (!file) {
+        return res.status(400).json({ message: 'Arquivo de imagem é obrigatório' });
       }
-      return response.status(404).json({ error: 'Category not found.' });
+
+      // ✅ CRIAR CATEGORIA NO POSTGRESQL
+      const category = await Category.create({ 
+        name, 
+        path: `/uploads/${file.filename}` 
+      });
+
+      // ✅ SALVAR IMAGEM NO MONGODB
+      await CategoryImage.create({
+        categoryId: category.id,
+        imagePath: `/uploads/${file.filename}`,
+        mimeType: file.mimetype,
+      });
+
+      return res.status(201).json({
+        ...category.toJSON(),
+        imagePath: `/uploads/${file.filename}`,
+      });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
     }
+  }
 
-    const { name } = request.body;
-    let newPath = category.path;
-
+  async show(req, res) {
     try {
-      if (request.file) {
-        const oldFilePath = resolve(request.file.destination, category.path);
-        try {
-          await unlink(oldFilePath);
-          console.log(`Arquivo antigo ${category.path} excluído.`);
-        } catch (unlinkError) {
-          console.warn(`Aviso: Não foi possível excluir o arquivo antigo ${category.path}. Pode não existir ou permissão negada.`, unlinkError);
-        }
-        newPath = request.file.filename;
+      const { id } = req.params;
+
+      const category = await Category.findByPk(id, {
+        include: {
+          association: 'products',
+          attributes: ['id', 'name', 'price', 'path'],
+        },
+      });
+
+      if (!category) {
+        return res.status(404).json({ message: 'Categoria não encontrada' });
+      }
+
+      // ✅ BUSCAR IMAGEM DO MONGODB
+      const image = await CategoryImage.findOne({ categoryId: category.id });
+
+      return res.json({
+        ...category.toJSON(),
+        imagePath: image ? image.imagePath : category.path,
+      });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async update(req, res) {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+
+      await categoryUpdateSchema.validate({ name, path: req.file ? 'ok' : '' });
+
+      const category = await Category.findByPk(id);
+
+      if (!category) {
+        return res.status(400).json({ message: 'Categoria não encontrada' });
+      }
+
+      let pathUpdate = category.path;
+
+      // ✅ SE HOUVER NOVO ARQUIVO, ATUALIZAR
+      if (req.file) {
+        pathUpdate = `/uploads/${req.file.filename}`;
+
+        // ✅ ATUALIZAR IMAGEM NO MONGODB
+        await CategoryImage.findOneAndUpdate(
+          { categoryId: category.id },
+          {
+            imagePath: pathUpdate,
+            mimeType: req.file.mimetype,
+          },
+          { upsert: true }
+        );
       }
 
       await category.update({
         name: name || category.name,
-        path: newPath,
+        path: pathUpdate,
       });
 
-      return response.status(200).json(category);
+      return res.json({
+        ...category.toJSON(),
+        imagePath: pathUpdate,
+      });
     } catch (error) {
-      console.error('--- ERRO NO CategoryController.update ---');
-      console.error('Detalhes do erro:', error);
-      console.error('Stack Trace:', error.stack);
-      if (request.file) {
-        const filePath = resolve(request.file.destination, request.file.filename);
-        try {
-          await unlink(filePath);
-          console.log(`Arquivo ${request.file.filename} excluído após erro na atualização da categoria.`);
-        } catch (unlinkError) {
-          console.error(`Erro ao excluir arquivo ${request.file.filename}:`, unlinkError);
-        }
-      }
-      return response.status(500).json({ error: 'Internal server error.' });
+      return res.status(400).json({ message: error.message });
     }
   }
 
-  async index(request, response) {
+  async delete(req, res) {
     try {
-      const categories = await Category.findAll();
-      return response.json(categories);
-    } catch (err) {
-      console.error('--- ERRO NO CategoryController.index ---');
-      console.error('Detalhes do erro:', err);
-      console.error('Stack Trace:', err.stack);
-      return response.status(500).json({ error: 'Erro interno do servidor ao buscar categorias.' });
+      const { id } = req.params;
+
+      const category = await Category.findByPk(id);
+
+      if (!category) {
+        return res.status(404).json({ message: 'Categoria não encontrada' });
+      }
+
+      // ✅ DELETAR IMAGEM DO MONGODB
+      await CategoryImage.findOneAndDelete({ categoryId: category.id });
+
+      // ✅ DELETAR ARQUIVO DO SERVIDOR
+      if (category.path) {
+        const filePath = path.join(process.cwd(), 'uploads', category.path.split('/').pop());
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      await category.destroy();
+
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
     }
   }
 }

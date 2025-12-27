@@ -54,50 +54,16 @@ class OrderController {
 
       return newProduct;
     });
-
-    const order = {
-      user: {
-        id: request.userId,
-        name: request.userName,
-      },
-      products: editedProduct,
-      status: 'Pedido realizado',
-    };
-
-    const orderResponse = await Order.create(order);
-
-    return response.status(201).json(orderResponse);
-  }
-
-  async index(request, response) {
-    try {
-      const orders = await Order.find()
-        .populate('user.id')
-        .sort({ createdAt: -1 });
-
-      const formattedOrders = orders.map((order) => {
-        const orderObj = order.toObject();
-
-        return {
-          _id: orderObj._id,
-          user: orderObj.user,
-          products: orderObj.products || [], // ← garante array
-          status: orderObj.status,
-          createdAt: orderObj.createdAt,
-          updatedAt: orderObj.updatedAt,
-        };
-      });
-
-      return response.json(formattedOrders);
-    } catch (err) { // ← CORRIGIDO: catch
-      console.error('Erro ao buscar pedidos:', err);
-      return response.status(500).json({ error: 'Internal server error' });
-    }
-  } // ← CORRIGIDO: fecha o método index
-
-  async update(request, response) {
+  async store(request, response) {
     const schema = Yup.object().shape({
-      status: Yup.string().required(),
+      products: Yup.array()
+        .required()
+        .of(
+          Yup.object().shape({
+            id: Yup.number().required(),
+            quantity: Yup.number().required(),
+          }),
+        ),
     });
 
     try {
@@ -106,23 +72,75 @@ class OrderController {
       return response.status(400).json({ error: err.errors });
     }
 
-    const { admin: isAdmin } = await User.findByPk(request.userId);
+    const productsId = request.body.products.map((product) => product.id);
 
-    if (!isAdmin) {
-      return response.status(401).json();
+    const updatedProducts = await Product.findAll({
+      where: {
+        id: productsId,
+      },
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['name'],
+        },
+      ],
+    });
+
+    const editedProduct = updatedProducts.map((product) => {
+      const productIndex = request.body.products.findIndex(
+        (requestProduct) => requestProduct.id === product.id,
+      );
+
+      const newProduct = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        category: product.category.name,
+        url: product.url,
+        quantity: request.body.products[productIndex].quantity,
+      };
+
+      return newProduct;
+    });
+
+        const order = {
+            user: {
+                id: userId,
+                name: userName,
+            },
+
+            products: mappedProducts,
+            status: 'pedido Realizado',
+        };
+        const newOrder = await Order.create(order);
+        return res.status(201).json(newOrder);
+
     }
+    async update(req, res) {
+        const schema = Yup.object({
+            status: Yup.string()
+                .required()
 
-    const { id } = request.params;
-    const { status } = request.body;
-
-    try {
-      await Order.updateOne({ _id: id }, { status });
-    } catch (error) {
-      return response.status(400).json({ error: error.message });
+        });
+        try {
+            schema.validateSync(req.body, { abortEarly: false, Strict: true });
+        } catch (err) {
+            return res.status(400).json({ error: err.errors });
+        }
+        const { status } = req.body;
+        const { id } = req.params;
+        try {
+            await Order.updateOne({ _id: id }, {status});
+        } catch (err) {
+            return res.status(400).json({ error: err.mensage });
+        }
+        return res.status(200).json({ message: "Status do pedido atualizado com sucesso!" });
     }
-
-    return response.json({ message: 'Status updated successfully' });
-  }
+    async index(_req, res) {
+        const orders = await Order.find();
+        return res.status(200).json(orders);
+    }
 }
 
 export default new OrderController();

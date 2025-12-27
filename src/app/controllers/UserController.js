@@ -1,8 +1,7 @@
 // src/app/controllers/UserController.js
-// Remova a importação de 'v4' da biblioteca 'uuid', pois não será mais usada para IDs.
-// import { v4 } from 'uuid'; // <-- REMOVA ESTA LINHA
-
-import * as Yup from 'yup';
+// biome-ignore assist/source/organizeImports: imports are manually organized
+import { v4 } from 'uuid';
+import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 
 class UserController {
@@ -25,6 +24,9 @@ class UserController {
       where: { email },
     });
 
+    if (userExists) {
+      return response.status(409).json({ error: 'User already exists' });
+    }
     if (userExists) {
       return response.status(409).json({ error: 'User already exists' });
     }

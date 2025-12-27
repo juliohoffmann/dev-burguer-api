@@ -2,7 +2,10 @@
 import { Router } from 'express';
 import multer from 'multer';
 import multerConfig from './config/multer.js';
+import multer from 'multer';
+import multerConfig from './config/multer.js';
 
+import ProductController from './app/controllers/ProductController.js';
 import ProductController from './app/controllers/ProductController.js';
 import SessionController from './app/controllers/SessionController.js';
 import CategoryController from './app/controllers/CategoryController.js';
