@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // src/config/database.js (ou o nome do seu arquivo de configuração do Sequelize)
 
 // Importe dotenv/config para carregar as variáveis de ambiente do seu arquivo .env
@@ -30,17 +29,3 @@ const config = {
 };
 
 export default config;
-=======
-export default {
-    dialect: 'postgres',
-    host: 'localhost',
-    username: 'admin',
-    password: '123456',
-    database: 'dev-burguer-db',
-    define: {
-        timestamps: true,
-        underscored: true,
-        underscoredAll: true,
-    },
-};
->>>>>>> 19a481aa57ebc61d50bd36509ab9c083a85abb35

@@ -1,18 +1,12 @@
-// src/routes.js
 import { Router } from 'express';
-import multer from 'multer';
 import multerConfig from './config/multer.js';
-import multer from 'multer';
-import multerConfig from './config/multer.js';
-
-import ProductController from './app/controllers/ProductController.js';
+import multer from 'multer'; // Mantenha APENAS esta linha
 import ProductController from './app/controllers/ProductController.js';
 import SessionController from './app/controllers/SessionController.js';
 import CategoryController from './app/controllers/CategoryController.js';
 import UserController from './app/controllers/UserController.js';
 import OrderController from './app/controllers/OrderController.js';
 import CreatePaymentIntentController from './app/controllers/stripe/CreatePaymentIntentController.js';
-
 import authMiddleware from './app/middlewares/auth.js'; // Middleware de autenticação geral
 import adminMiddleware from './app/middlewares/admin.js'; // Middleware para verificar se é admin
 
@@ -32,7 +26,6 @@ routes.use(authMiddleware);
 // Rotas que exigem que o usuário seja ADMIN
 routes.post('/products', upload.single('file'), adminMiddleware, ProductController.store);
 routes.put('/products/:id', upload.single('file'), adminMiddleware, ProductController.update);
-
 routes.post('/categories', upload.single('file'), adminMiddleware, CategoryController.store);
 routes.put('/categories/:id', upload.single('file'), adminMiddleware, CategoryController.update);
 

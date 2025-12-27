@@ -34,7 +34,7 @@
                 return `http://localhost:3001/product-file/${this.path}`;
               },
             },
-            category_id: {
+            Category_id: {
               type: Sequelize.INTEGER,
               allowNull: true, // <-- CONFIRMADO: Permitir nulo
               references: {

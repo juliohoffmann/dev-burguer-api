@@ -29,12 +29,18 @@ importers:
       multer:
         specifier: ^2.0.2
         version: 2.0.2
+      node:
+        specifier: ^24.12.0
+        version: 24.12.0
       pg:
         specifier: ^8.16.3
         version: 8.16.3
       pg-hstore:
         specifier: ^2.3.4
         version: 2.3.4
+      react:
+        specifier: ^19.2.3
+        version: 19.2.3
       sequelize:
         specifier: ^6.37.7
         version: 6.37.7(pg-hstore@2.3.4)(pg@8.16.3)
@@ -610,8 +616,16 @@ packages:
     resolution: {integrity: sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A==}
     engines: {node: ^18 || ^20 || >= 21}
 
+  node-bin-setup@1.1.4:
+    resolution: {integrity: sha512-vWNHOne0ZUavArqPP5LJta50+S8R261Fr5SvGul37HbEDcowvLjwdvd0ZeSr0r2lTSrPxl6okq9QUw8BFGiAxA==}
+
   node-gyp-build@4.8.4:
     resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
+
+  node@24.12.0:
+    resolution: {integrity: sha512-LiJkH5haaqzS3csrpEhCxTa5/+v/wco0c1XOd/52Emho0AI3PNmcxPs1fqpH3BmtC2N3lt7gbJ7ncObjd9gYJg==}
+    engines: {npm: '>=5.0.0'}
     hasBin: true
 
   nopt@7.2.1:
@@ -738,6 +752,10 @@ packages:
   raw-body@2.5.1:
     resolution: {integrity: sha512-qqJBtEyVgS0ZmPGdCFPWJ3FreoqvG4MVQln/kCgF7Olq95IbOp0/BWyMwbdtn4VTvkM8Y7khCQ2Xgk/tcrCXig==}
     engines: {node: '>= 0.8'}
+
+  react@19.2.3:
+    resolution: {integrity: sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==}
+    engines: {node: '>=0.10.0'}
 
   readable-stream@3.6.2:
     resolution: {integrity: sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==}
@@ -1550,7 +1568,13 @@ snapshots:
 
   node-addon-api@8.5.0: {}
 
+  node-bin-setup@1.1.4: {}
+
   node-gyp-build@4.8.4: {}
+
+  node@24.12.0:
+    dependencies:
+      node-bin-setup: 1.1.4
 
   nopt@7.2.1:
     dependencies:
@@ -1657,6 +1681,8 @@ snapshots:
       http-errors: 2.0.0
       iconv-lite: 0.4.24
       unpipe: 1.0.0
+
+  react@19.2.3: {}
 
   readable-stream@3.6.2:
     dependencies:
