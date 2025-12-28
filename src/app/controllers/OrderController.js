@@ -1,119 +1,107 @@
-import * as Yup from 'yup';
-import Product from '../models/Product.js';
-import Category from '../models/Category.js';
-import Order from '../schemas/Order.js'; // Schema do MongoDB
-import User from '../models/User.js'; // Não está sendo usado no store, mas pode ser para outras coisas
+import * as Yup from "yup";
+import Product from "../models/Product.js";
+import Category from "../models/Category.js";
+import Order from "../schemas/Order.js";
+import User from "../models/User.js";
 
 class OrderController {
   async store(request, response) {
-    const schema = Yup.object().shape({
+    const schema = Yup.object({
       products: Yup.array()
         .required()
         .of(
-          Yup.object().shape({
+          Yup.object({
             id: Yup.number().required(),
             quantity: Yup.number().required(),
-          }),
+          })
         ),
     });
 
     try {
-      await schema.validate(request.body, { abortEarly: false }); // Use await com validate
+      schema.validateSync(request.body, { abortEarly: false });
     } catch (err) {
       return response.status(400).json({ error: err.errors });
     }
 
-    const productsId = request.body.products.map((product) => product.id);
+    const { products } = request.body;
 
-    const updatedProducts = await Product.findAll({
+    const productsIds = products.map((product) => product.id);
+
+    const findProducts = await Product.findAll({
       where: {
-        id: productsId,
+        id: productsIds,
       },
       include: [
         {
           model: Category,
-          as: 'category',
-          attributes: ['name'],
+          as: "category",
+          attributes: ["name"],
         },
       ],
     });
 
-    // Mapeia os produtos para o formato desejado para o pedido
-    const mappedProducts = updatedProducts.map((product) => {
-      const productIndex = request.body.products.findIndex(
-        (requestProduct) => requestProduct.id === product.id,
-      );
+    const formattedProducts = findProducts.map((product) => {
+      const productIndex = products.findIndex((item) => item.id === product.id);
 
       const newProduct = {
         id: product.id,
         name: product.name,
-        price: product.price,
         category: product.category.name,
+        price: product.price,
         url: product.url,
-        quantity: request.body.products[productIndex].quantity,
+        quantity: products[productIndex].quantity,
       };
+
       return newProduct;
     });
 
-    // As variáveis userId e userName precisam vir do request.
-    // Assumindo que você tem um middleware de autenticação que adiciona userId e userName ao request.
-    const userId = request.userId; // Ou request.user.id, dependendo do seu middleware
-    const userName = request.userName; // Ou request.user.name
-
-    if (!userId || !userName) {
-      return response.status(401).json({ error: 'User not authenticated or user info missing.' });
-    }
-
     const order = {
       user: {
-        id: userId,
-        name: userName,
+        id: request.userId,
+        name: request.userName,
       },
-      products: mappedProducts,
-      status: 'Pedido Realizado', // Corrigido para 'Pedido Realizado'
+      products: formattedProducts,
+      status: "Pedido Realizado",
     };
 
-    try {
-      const newOrder = await Order.create(order);
-      return response.status(201).json(newOrder); // Use 'response' em vez de 'res'
-    } catch (error) {
-      console.error('Error creating order:', error);
-      return response.status(500).json({ error: 'Failed to create order.' });
-    }
+    const createdOrder = await Order.create(order);
+
+    return response.status(201).json(createdOrder);
   }
 
-  async update(req, res) {
+  async index(request, response) {
+    const orders = await Order.find();
+
+    return response.json(orders);
+  }
+
+  async update(request, response) {
     const schema = Yup.object({
       status: Yup.string().required(),
     });
 
     try {
-      await schema.validate(req.body, { abortEarly: false, strict: true }); // Use await com validate
+      schema.validateSync(request.body, { abortEarly: false });
     } catch (err) {
-      return res.status(400).json({ error: err.errors });
+      return response.status(400).json({ error: err.errors });
     }
 
-    const { status } = req.body;
-    const { id } = req.params;
+    const { admin: isAdmin } = await User.findByPk(request.userId);
+
+    if (!isAdmin) {
+      return response.status(401).json();
+    }
+
+    const { id } = request.params;
+    const { status } = request.body;
 
     try {
       await Order.updateOne({ _id: id }, { status });
     } catch (err) {
-      console.error('Error updating order:', err); // Log do erro para depuração
-      return res.status(400).json({ error: err.message }); // Corrigido para err.message
+      return response.status(400).json({ error: err.message });
     }
 
-    return res.status(200).json({ message: 'Status do pedido atualizado com sucesso!' });
-  }
-
-  async index(_req, res) {
-    try {
-      const orders = await Order.find();
-      return res.status(200).json(orders);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      return res.status(500).json({ error: 'Failed to fetch orders.' });
-    }
+    return response.json({ message: "Status updated sucessfully" });
   }
 }
 

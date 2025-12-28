@@ -1,8 +1,10 @@
-import express from 'express';
-import routes from './routes.js';
+import express from "express";
+import { fileURLToPath } from 'url';
+import routes from "./routes.js";
+import cors from "cors";
+import  './database/index.js';
+
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import cors from 'cors';
 
 
 
@@ -11,24 +13,23 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 class App {
   constructor() {
     this.app = express();
-    this.app.disable('etag');
-
-    this.app.use(cors());
-
+    this.app.use(cors())
     this.middlewares();
     this.routes();
+   
+    
   }
 
   middlewares() {
     this.app.use(express.json());
     this.app.use(
-      '/product-file',
-      express.static(resolve(__dirname, '..', 'uploads')),
+      "/product-file",
+      express.static(resolve(__dirname, "..", "uploads"))
     );
 
     this.app.use(
-      '/category-file',
-      express.static(resolve(__dirname, '..', 'uploads')),
+      "/category-file",
+      express.static(resolve(__dirname, "..", "uploads"))
     );
   }
 
