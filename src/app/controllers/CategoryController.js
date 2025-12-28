@@ -104,8 +104,10 @@ class CategoryController {
   }
 
   async index(request, response) {
-    const categories = await Category.findAll();
-
+     const categories = await Category.findAll({
+      
+      attributes: ['id', 'name', 'path', 'url'], 
+    });
     return response.json(categories);
   }
 }

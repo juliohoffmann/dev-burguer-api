@@ -1,49 +1,58 @@
-import { v4 } from "uuid";
-import * as Yup from "yup";
+// src/app/controllers/UserController.js
 
-import User from "../models/User.js";
+import * as Yup from 'yup'; // Para validação
+import User from '../models/User.js'; // Seu modelo de usuário
+import bcrypt from 'bcrypt'; // Para hashing de senha
 
 class UserController {
   async store(request, response) {
-    const schema = Yup.object({
-      name: Yup.string().required(),
-      email: Yup.string().email().required(),
-      password: Yup.string().min(6).required(),
-      admin: Yup.boolean(),
+    // 1. Definir o schema de validação para criação de usuário
+    const schema = Yup.object().shape({
+      name: Yup.string().required('O nome é obrigatório'),
+      email: Yup.string().email('Digite um email válido').required('O email é obrigatório'),
+      password: Yup.string().min(6, 'A senha deve ter pelo menos 6 caracteres').required('A senha é obrigatória'),
+      // passwordConfirm não é enviado para o backend, apenas validado no frontend
     });
 
+    // 2. Validar os dados da requisição
     try {
-      schema.validateSync(request.body, { abortEarly: false });
+      await schema.validate(request.body, { abortEarly: false });
     } catch (err) {
       return response.status(400).json({ error: err.errors });
     }
 
-    const { name, email, password, admin } = request.body;
+    const { name, email, password } = request.body;
 
+    // 3. Verificar se o email já existe
     const userExists = await User.findOne({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (userExists) {
-      return response.status(400).json({ error: "User already exists" });
+      return response.status(409).json({ error: 'Email já cadastrado.' }); // 409 Conflict
     }
 
+    // 4. Criar o usuário (o hook beforeSave no modelo User cuidará do hashing da senha)
     const user = await User.create({
-      id: v4(),
       name,
       email,
-      password,
-      admin,
+      password, // O campo virtual 'password' será usado pelo hook beforeSave
+      admin: false, // Default para novos usuários
     });
 
+    // 5. Retornar os dados do usuário (excluindo password_hash)
+    const { id, admin } = user;
     return response.status(201).json({
-      id: user.id,
+      id,
       name,
       email,
+      admin,
     });
   }
+
+  // Você pode ter outros métodos aqui, como update, index, delete, etc.
+  // async update(request, response) { ... }
+  // async index(request, response) { ... }
 }
 
 export default new UserController();
