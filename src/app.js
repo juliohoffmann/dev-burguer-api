@@ -13,7 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 class App {
   constructor() {
     this.app = express();
-    this.app.use(cors())
+    this.app.use(cors({origin: process .env.CORS_ORIGIN}));
     this.middlewares();
     this.routes();
    
