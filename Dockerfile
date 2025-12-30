@@ -1,13 +1,13 @@
-FROM node:20-alpine
+FROM node: 20-alpine
 
 WORKDIR /app
 
 COPY package.json ./
 
-RUN pnpm install
+RUN npm install
 
 COPY . .
 
 EXPOSE 3001
 
-CMD ['npx sequelize-cli db:migrate && pnpm run start']
+CMD npx sequelize-cli db:migrate && npm run start
