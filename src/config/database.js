@@ -18,7 +18,7 @@ const config = {
     underscoredAll: true,
   },
   // Adicione a opção 'logging' para ver as queries SQL no console (útil para debug)
-    logging: false,
+    logging: true,
  // Defina como true para ver os logs SQL
   // Adicione opções específicas do PostgreSQL se necessário, por exemplo, SSL
   // dialectOptions: {
