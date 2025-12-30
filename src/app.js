@@ -17,16 +17,23 @@ class App {
 
   middlewares() {
     this.app.use(express.json());
-
     this.app.use(
       "/product-file",
       express.static(resolve(__dirname, "..", "uploads"))
     );
-
     this.app.use(
       "/category-file",
       express.static(resolve(__dirname, "..", "uploads"))
     );
+
+    // Health check route (ADICIONE AQUI)
+    this.app.get('/', (req, res) => {
+      return res.json({
+        status: 'ok',
+        message: 'DevBurguer API is running',
+        timestamp: new Date().toISOString()
+      });
+    });
   }
 
   routes() {
@@ -39,9 +46,9 @@ class App {
         console.error('📍 Rota:', req.path);
         console.error('🔧 Content-Type:', req.headers['content-type']);
         console.error('🚨 Erro:', err.message);
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'JSON inválido',
-          message: err.message 
+          message: err.message
         });
       }
       next();
