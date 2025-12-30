@@ -6,12 +6,12 @@
 import 'dotenv/config';
 
 const config = {
-  dialect: 'postgres',
-  host: process.env.PG_HOST || 'localhost', // Usar variável de ambiente, com fallback
-  port: process.env.PG_PORT || 5432,       // Usar variável de ambiente, com fallback (porta padrão do PostgreSQL)
-  username: process.env.PG_USERNAME || 'admin', // Usar variável de ambiente, com fallback
-  password: process.env.PG_PASSWORD || '123456', // Usar variável de ambiente, com fallback
-  database: process.env.PG_DATABASE || 'dev-burguer-db', // Usar variável de ambiente, com fallback
+  dialect:process.env.DB_DIALECT,
+  host: process.env.DB_HOST , // Usar variável de ambiente, com fallback
+  port: process.env.DB_PORT ,       // Usar variável de ambiente, com fallback (porta padrão do PostgreSQL)
+  username: process.env.DB_USERNAME , // Usar variável de ambiente, com fallback
+  password: process.env.DB_PASSWORD , // Usar variável de ambiente, com fallback
+  database: process.env.DB_DATABASE , // Usar variável de ambiente, com fallback
   define: {
     timestamps: true,
     underscored: true,
