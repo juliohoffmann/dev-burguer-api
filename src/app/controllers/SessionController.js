@@ -1,6 +1,6 @@
 import * as Yup from "yup";
 import User from "../models/User.js";
-import jtw from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import authConfig from "../../config/auth.js";
 
 class SessionController {
@@ -12,14 +12,14 @@ class SessionController {
 
     const isValid = await schema.isValid(request.body);
 
-    const emailOrPasswordIncorret = () => {
+    const emailOrPasswordIncorrect = () => {
       response
         .status(401)
         .json({ error: "Make sure your email or password are correct" });
     };
 
     if (!isValid) {
-      return emailOrPasswordIncorret();
+      return emailOrPasswordIncorrect();
     }
 
     const { email, password } = request.body;
@@ -31,23 +31,31 @@ class SessionController {
     });
 
     if (!user) {
-      return emailOrPasswordIncorret();
+      return emailOrPasswordIncorrect();
     }
 
     const isSamePassword = await user.checkPassword(password);
 
     if (!isSamePassword) {
-      return emailOrPasswordIncorret();
+      return emailOrPasswordIncorrect();
     }
 
     return response.status(201).json({
       id: user.id,
       name: user.name,
-      email,
+      email: user.email,
       admin: user.admin,
-      token: jtw.sign({ id: user.id, name: user.name }, authConfig.secret, {
-        expiresIn: authConfig.expiresIn,
-      }),
+      token: jwt.sign(
+        { 
+          id: user.id, 
+          email: user.email,
+          admin: user.admin  // ← ADICIONE AQUI
+        }, 
+        authConfig.secret, 
+        {
+          expiresIn: authConfig.expiresIn,
+        }
+      ),
     });
   }
 }
