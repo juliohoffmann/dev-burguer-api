@@ -2,7 +2,6 @@ import { Router } from "express";
 import authMiddleware from "./app/middlewares/auth.js";
 import multer from "multer";
 import multerConfig from "./config/multer.js";
-
 import SessionController from "./app/controllers/SessionController.js";
 import UserController from "./app/controllers/UserController.js";
 import ProductController from "./app/controllers/ProductController.js";
@@ -13,16 +12,17 @@ import CreatePaymentIntentController from "./app/controllers/stripe/CreatePaymen
 const routes = new Router();
 const upload = multer(multerConfig);
 
-// Rotas que não exigem autenticação (públicas)
-routes.post("/users", UserController.store);
-routes.post("/session", SessionController.store);
-routes.get("/products", ProductController.index); // <-- MOVIDA PARA CIMA
-routes.get("/categories", CategoryController.index); // <-- MOVIDA PARA CIMA
+// ✅ ROTAS PÚBLICAS (SEM AUTENTICAÇÃO)
+routes.post("/users", UserController.store);           // Criar usuário
+routes.post("/sessions", SessionController.store);      // Login
+routes.get("/products", ProductController.index);       // Listar produtos
+routes.get("/categories", CategoryController.index);    // Listar categorias
 
-// Todas as rotas abaixo desta linha exigem autenticação
+// ✅ MIDDLEWARE DE AUTENTICAÇÃO
+// Todas as rotas abaixo exigem token JWT
 routes.use(authMiddleware);
 
-// Rotas que exigem autenticação (e possivelmente adminMiddleware, se aplicável)
+// ✅ ROTAS PROTEGIDAS (EXIGEM TOKEN)
 routes.post("/products", upload.single("file"), ProductController.store);
 routes.put("/products/:id", upload.single("file"), ProductController.update);
 
