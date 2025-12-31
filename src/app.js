@@ -1,9 +1,9 @@
 import express from "express";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 import routes from "./routes.js";
 import cors from "cors";
-import './database/index.js';
-import { resolve, dirname } from 'node:path';
+import "./database/index.js";
+import { resolve, dirname } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -18,15 +18,16 @@ class App {
   middlewares() {
     this.app.use(express.json());
 
-    // Health check routes
-    this.app.get('/health', (req, res) => {
-      return res.status(200).json({ status: 'ok' });
+    // Health check simples
+    this.app.get("/health", (req, res) => {
+      return res.status(200).json({ status: "ok" });
     });
 
-    this.app.get('/', (req, res) => {
-      return res.status(200).json({ 
-        status: 'ok',
-        message: 'DevBurguer API is running'
+    // Opcional: rota raiz
+    this.app.get("/", (req, res) => {
+      return res.status(200).json({
+        status: "ok",
+        message: "DevBurguer API is running"
       });
     });
 
@@ -43,12 +44,13 @@ class App {
   routes() {
     this.app.use(routes);
 
+    // Handler de JSON inválido
     this.app.use((err, req, res, next) => {
-      if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-        console.error('❌ JSON inválido:', err.message);
+      if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+        console.error("❌ JSON inválido:", err.message);
         return res.status(400).json({
-          error: 'JSON inválido',
-          message: err.message
+          error: "JSON inválido",
+          message: err.message,
         });
       }
       next();
@@ -57,4 +59,5 @@ class App {
 }
 
 export default new App().app;
+
 
