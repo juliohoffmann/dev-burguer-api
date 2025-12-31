@@ -48,9 +48,6 @@ class App {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'authorization']
     }));
-
-    // Tratamento explícito de preflight
-    this.app.options('*', cors());
   }
 
   middlewares() {
@@ -81,6 +78,7 @@ class App {
 }
 
 export default new App().app;
+
 
 
 
