@@ -11,7 +11,7 @@ class App {
   constructor() {
     this.app = express();
 
-    // ✅ HEALTH CHECK ROUTES - ANTES DE TUDO
+    // ✅ HEALTH CHECK - PRIMEIRA COISA, ANTES DE TUDO
     this.app.get("/", (req, res) => {
       return res.status(200).json({ status: "ok" });
     });
@@ -20,6 +20,7 @@ class App {
       return res.status(200).json({ status: "ok" });
     });
 
+    // Depois vem o resto
     this.app.use(cors({ origin: process.env.CORS_ORIGIN }));
     this.middlewares();
     this.routes();
@@ -36,10 +37,8 @@ class App {
       express.static(resolve(__dirname, "..", "uploads"))
     );
 
-    // Error handler para JSON inválido
     this.app.use((err, req, res, next) => {
       if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
-        console.error("🚨 Erro:", err.message);
         return res.status(400).json({
           error: "JSON inválido",
           message: err.message,
@@ -55,6 +54,7 @@ class App {
 }
 
 export default new App().app;
+
 
 
 
