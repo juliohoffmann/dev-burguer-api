@@ -22,45 +22,42 @@ class App {
 
     // ✅ CORS logo depois do health check
     this.configureCors();
+
+    // ✅ Middlewares
     this.middlewares();
+
+    // ✅ Rotas
     this.routes();
   }
 
   configureCors() {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      process.env.CORS_ORIGIN
-    ].filter(Boolean); // Remove undefined
-
-    this.app.use(cors({
-      origin: (origin, callback) => {
-        // Permite requisições sem origin (Postman, apps mobile, etc)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'authorization']
-    }));
+    this.app.use(
+      cors({
+        origin: process.env.CORS_ORIGIN || "http://localhost:3001",
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization", "authorization"],
+        optionsSuccessStatus: 200,
+      })
+    );
   }
 
   middlewares() {
     this.app.use(express.json());
+
+    // ✅ Servir arquivos estáticos de produtos
     this.app.use(
       "/product-file",
       express.static(resolve(__dirname, "..", "uploads"))
     );
+
+    // ✅ Servir arquivos estáticos de categorias
     this.app.use(
       "/category-file",
       express.static(resolve(__dirname, "..", "uploads"))
     );
 
+    // ✅ Middleware de erro para JSON inválido
     this.app.use((err, req, res, next) => {
       if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
         return res.status(400).json({
@@ -78,6 +75,7 @@ class App {
 }
 
 export default new App().app;
+
 
 
 
