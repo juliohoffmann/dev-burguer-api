@@ -20,10 +20,37 @@ class App {
       return res.status(200).json({ status: "ok" });
     });
 
-    // Depois vem o resto
-    this.app.use(cors({ origin: process.env.CORS_ORIGIN }));
+    // ✅ CORS logo depois do health check
+    this.configureCors();
     this.middlewares();
     this.routes();
+  }
+
+  configureCors() {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      process.env.CORS_ORIGIN
+    ].filter(Boolean); // Remove undefined
+
+    this.app.use(cors({
+      origin: (origin, callback) => {
+        // Permite requisições sem origin (Postman, apps mobile, etc)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'authorization']
+    }));
+
+    // Tratamento explícito de preflight
+    this.app.options('*', cors());
   }
 
   middlewares() {
@@ -54,6 +81,7 @@ class App {
 }
 
 export default new App().app;
+
 
 
 
