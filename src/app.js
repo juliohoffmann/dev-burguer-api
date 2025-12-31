@@ -17,6 +17,24 @@ class App {
 
   middlewares() {
     this.app.use(express.json());
+
+    // Health check route - ADICIONE ESTA ROTA
+    this.app.get('/health', (req, res) => {
+      return res.status(200).json({ 
+        status: 'ok',
+        timestamp: new Date().toISOString()
+      });
+    });
+
+    // Rota raiz (opcional, mas recomendado)
+    this.app.get('/', (req, res) => {
+      return res.json({
+        status: 'ok',
+        message: 'DevBurguer API is running',
+        timestamp: new Date().toISOString()
+      });
+    });
+
     this.app.use(
       "/product-file",
       express.static(resolve(__dirname, "..", "uploads"))
@@ -25,15 +43,6 @@ class App {
       "/category-file",
       express.static(resolve(__dirname, "..", "uploads"))
     );
-
-    // Health check route (ADICIONE AQUI)
-    this.app.get('/', (req, res) => {
-      return res.json({
-        status: 'ok',
-        message: 'DevBurguer API is running',
-        timestamp: new Date().toISOString()
-      });
-    });
   }
 
   routes() {
