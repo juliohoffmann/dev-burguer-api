@@ -3,12 +3,12 @@ import UserController from "./app/controllers/UserController.js";
 import SessionController from "./app/controllers/SessionController.js";
 import ProductController from "./app/controllers/ProductController.js";
 import multer from "multer";
-import multerConfig from './config/multer.cjs'
+import multerConfig from './config/multer.js';
 import authMiddleware from "./app/middlewares/auth.js";
 import CategoryController from "./app/controllers/CategoryController.js";
 import adminMiddleware from "./app/middlewares/admin.js";
 import OrderController from "./app/controllers/OrderController.js";
-import CreatePaymentIntentController from './app/controllers/stripe/CreatePaymentIntentController.js'
+import CreatePaymentIntentController from './app/controllers/stripe/CreatePaymentIntentController.js';
 
 
 const routes = new Router();

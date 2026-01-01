@@ -1,4 +1,4 @@
-import Stripe from "stripe"
+import Stripe from "stripe";
 import * as Yup from "yup";
 import 'dotenv/config';
 
