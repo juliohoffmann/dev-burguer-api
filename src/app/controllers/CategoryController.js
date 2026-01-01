@@ -1,115 +1,105 @@
-import * as Yup from "yup";
-import Category from "../models/Category.js";
-import User from "../models/User.js";
+import * as Yup from 'yup'
+import Category from '../models/Category.js';
 
 class CategoryController {
-  async store(request, response) {
-    const schema = Yup.object({
-      name: Yup.string().required(),
-    });
+    async store (request, response) {
+        const schema = Yup.object({
+            name: Yup.string().required(),
+        });
 
-    try {
-      schema.validateSync(request.body, { abortEarly: false });
-    } catch (err) {
-      return response.status(400).json({ error: err.errors });
+        try {
+            schema.validateSync(request.body, {abortEarly: false })
+        } catch (err) {
+            return response.status(400).json({error: err.errors});
+        }
+
+
+
+        //Campos vem do authMiddleware
+        const { name } = request.body
+        const {filename} = request.file
+
+        const existingCategory = await Category.findOne({
+            where: {
+                name  //Parametro de busca
+                
+            }
+        })
+
+        if(existingCategory) {
+            return response.status(400).json({error: 'Category already exists'})
+
+        }
+
+        const newCategory = await Category.create({
+            name,
+            path: filename
+        })
+
+        return response.status(201).json(newCategory)
+        //Retorna para o front-end
     }
 
-    const { admin: isAdmin } = await User.findByPk(request.userId);
+    async update (request, response) {
+        const schema = Yup.object({
+            name: Yup.string(),
+        });
 
-    if (!isAdmin) {
-      return response.status(401).json();
+        try {
+            schema.validateSync(request.body, {abortEarly: false })
+        } catch (err) {
+            return response.status(400).json({error: err.errors});
+        }
+
+
+
+        const { name } = request.body
+        const { id } = request.params
+
+
+        let path
+        if (request.file) {
+            const { filename } = request.file
+            path = filename
+        }
+
+        const existingCategory = await Category.findOne({
+            where: {
+                name
+                
+            }
+        })
+
+        if(existingCategory) {
+            return response.status(400).json({error: 'Category already exists'})
+        }
+
+        /**
+         * Atualiza o nome e path onde tem aquele ID
+         */
+        await Category.update({
+            name,
+            path,
+        }, {
+            where: {
+                id
+            }
+            
+        })
+
+        return response.status(201).json()
     }
 
-    const { filename: path } = request.file;
-    const { name } = request.body;
+    /**
+     * Retorna todas as categorias
+     */
+    async index(_request, response) {
+        const categories = await Category.findAll()
 
-    const categoryExists = await Category.findOne({
-      where: {
-        name,
-      },
-    });
 
-    if (categoryExists) {
-      return response.status(400).json({ error: "category already exists" });
+
+        return response.status(200).json(categories)
     }
-
-    const category = await Category.create({
-      name,
-      path,
-    });
-
-    return response
-      .status(201)
-      .json({ sucess: `category (${category.name}) created!` });
-  }
-  async update(request, response) {
-    const schema = Yup.object({
-      name: Yup.string(),
-    });
-
-    try {
-      schema.validateSync(request.body, { abortEarly: false });
-    } catch (err) {
-      return response.status(400).json({ error: err.errors });
-    }
-
-    const { admin: isAdmin } = await User.findByPk(request.userId);
-
-    if (!isAdmin) {
-      return response.status(401).json();
-    }
-
-    const { id } = request.params;
-
-    const categoryExists = await Category.findByPk(id);
-
-    if (!categoryExists) {
-      return response
-        .status(400)
-        .json({ message: "Make sure your category id is correct" });
-    }
-
-    let path;
-    if (request.file) {
-      path = request.file.filename;
-    }
-
-    const { name } = request.body;
-
-    if (name) {
-      const categoryNameExists = await Category.findOne({
-        where: {
-          name,
-        },
-      });
-
-      if (categoryNameExists && categoryExists.id === +id) {
-        return response.status(400).json({ error: "category already exists" });
-      }
-    }
-
-    await Category.update(
-      {
-        name,
-        path,
-      },
-      {
-        where: {
-          id,
-        },
-      }
-    );
-
-    return response.status(200).json();
-  }
-
-  async index(request, response) {
-     const categories = await Category.findAll({
-      
-      attributes: ['id', 'name', 'path', 'url'], 
-    });
-    return response.json(categories);
-  }
 }
 
-export default new CategoryController();
+export default new CategoryController

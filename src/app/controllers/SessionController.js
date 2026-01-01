@@ -1,63 +1,56 @@
-import * as Yup from "yup";
-import User from "../models/User.js";
-import jwt from "jsonwebtoken";
-import authConfig from "../../config/auth.js";
+import * as Yup from 'yup';
+import User from '../models/User.js';
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+import authConfig from './../../config/auth.js'
 
 class SessionController {
-  async store(request, response) {
-    const schema = Yup.object({
-      email: Yup.string().email().required(),
-      password: Yup.string().min(6).required(),
-    });
+    async store(request, response) {
+        const schema = Yup.object({
+            email: Yup.string().email().required(),
+            password: Yup.string().min(6).required(),
+        })
 
-    const isValid = await schema.isValid(request.body);
+        const isValid = await schema.isValid(request.body, { strict: true , abortEarly: false});
 
-    const emailOrPasswordIncorrect = () => {
-      response
-        .status(401)
-        .json({ error: "Make sure your email or password are correct" });
-    };
-
-    if (!isValid) {
-      return emailOrPasswordIncorrect();
-    }
-
-    const { email, password } = request.body;
-
-    const user = await User.findOne({
-      where: {
-        email,
-      },
-    });
-
-    if (!user) {
-      return emailOrPasswordIncorrect();
-    }
-
-    const isSamePassword = await user.checkPassword(password);
-
-    if (!isSamePassword) {
-      return emailOrPasswordIncorrect();
-    }
-
-    return response.status(201).json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      admin: user.admin,
-      token: jwt.sign(
-        { 
-          id: user.id, 
-          email: user.email,
-          admin: user.admin  // ← ADICIONE AQUI
-        }, 
-        authConfig.secret, 
-        {
-          expiresIn: authConfig.expiresIn,
+        
+        const emailOrPasswordIncorrect = () => {
+            return response.status(400).json({error: 'Email or password incorrect'});
         }
-      ),
-    });
-  }
+
+        if(!isValid){
+            emailOrPasswordIncorrect()
+        }
+        
+        const {email, password} = request.body;
+
+        const existingUser = await User.findOne({
+            where: {
+                email,
+            },
+        });
+        if (!existingUser) {
+            emailOrPasswordIncorrect()
+        }
+
+        //Compara a senha digitada pelo usuario com a senha do banco de dados
+        const isPasswordCorrect = await bcrypt.compare(password, existingUser.password_hash)
+
+        if (!isPasswordCorrect) {
+            emailOrPasswordIncorrect()
+        }
+
+        const token = jwt.sign({ id: existingUser.id, admin: existingUser.admin, name: existingUser.name}, authConfig.secret , 
+            {expiresIn: authConfig.expiresIn})
+
+        return response.status(200).json({ 
+            id: existingUser.id,
+            name: existingUser.name,
+            email: existingUser.email,
+            admin: existingUser.admin,
+            token
+        });
+    }
 }
 
-export default new SessionController();
+export default new SessionController

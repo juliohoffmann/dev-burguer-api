@@ -1,33 +1,25 @@
 import Sequelize, { Model } from "sequelize";
-import bcrypt from "bcrypt";
 
+
+// Class Model (vem de dentro do sequelize)
 class User extends Model {
-  static init(sequelize) {
-    super.init(
-      {
-        name: Sequelize.STRING,
-        email: Sequelize.STRING,
-        password: Sequelize.VIRTUAL,
-        password_hash: Sequelize.STRING,
-        admin: Sequelize.BOOLEAN,
-      },
-      {
-        sequelize,
-      }
+    //Usa-se static para não precisar instanciar para usar o metodo
+    static init (sequelize) {
+        super.init(
+        {
+            name: Sequelize.STRING,
+            email: Sequelize.STRING,
+            password_hash: Sequelize.STRING,
+            admin: Sequelize.BOOLEAN
+        }, 
+        {
+            sequelize,
+            tableName: 'users'
+        },
     );
-
-    this.addHook("beforeSave", async (user) => {
-      if (user.password) {
-        user.password_hash = await bcrypt.hash(user.password, 10);
-      }
-    });
-
-    return this;
-  }
-
-  async checkPassword(password) {
-    return bcrypt.compare(password, this.password_hash);
-  }
+    return this     
+    }    
+     
 }
 
-export default User;
+export default User
