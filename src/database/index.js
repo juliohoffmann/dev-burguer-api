@@ -1,6 +1,6 @@
 import { Sequelize } from "sequelize";
 import mongoose from "mongoose";
-import databaseConfig from "../config/database.cjs";
+import databaseConfig from "../config/database.js";
 import User from "../app/models/User.js";
 import Product from "../app/models/Product.js";
 import Category from "../app/models/Category.js";
