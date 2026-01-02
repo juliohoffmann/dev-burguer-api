@@ -1,6 +1,4 @@
-
 module.exports = {
-  
     dialect: 'postgres',
     host: 'localhost',
     port: 5433,
@@ -8,11 +6,9 @@ module.exports = {
     password: 'postgres',
     database: 'dev-burguer-db',
     define: {
-      timestamps: true, // cria colunas createdAt e updatedAt
-      underscored: true,
-      underscoredAll: true,
-    
-  },
+        timestamps: true, //vai trackear a data de criaçao e atualização do usuario criado
+        underscored: true,
+        underscoredAll: true,
 
-
+    },
 };
