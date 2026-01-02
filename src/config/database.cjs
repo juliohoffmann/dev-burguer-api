@@ -8,7 +8,7 @@ module.exports = {
     define: {
         timestamps: true, //vai trackear a data de criaçao e atualização do usuario criado
         underscored: true,
-        underscoredAll: true,
+        underscoredAll: true
 
-    },
+    }
 };
