@@ -1,4 +1,4 @@
-    // src/database/index.js
+    // database/index.js
     import { Sequelize } from "sequelize";
     import mongoose from "mongoose";
     import databaseConfig from "../config/database.cjs";
@@ -16,16 +16,19 @@
 
         init() {
             this.connection = new Sequelize(databaseConfig);
-            models.map((model)  => model.init(this.connection)).map(model => model.associate && model.associate(this.connection.models));
+            models.map((model) => model.init(this.connection)).map(model => model.associate && model.associate(this.connection.models));
         }
 
         mongo() {
             // Use a variável de ambiente MONGO_URL aqui
-            this.mongooseConnection = mongoose.connect(process.env.MONGO_URL);
+            this.mongooseConnection = mongoose.connect(process.env.MONGO_URL)
+                .then(() => console.log('MongoDB connected successfully!'))
+                .catch(err => console.error('MongoDB connection error:', err));
         }
     }
 
     export default new Database();
+
 
 
 
