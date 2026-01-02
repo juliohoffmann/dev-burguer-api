@@ -1,6 +1,6 @@
 
 module.exports = {
-  development: {
+  
     dialect: 'postgres',
     host: 'localhost',
     port: 5433,
@@ -11,7 +11,7 @@ module.exports = {
       timestamps: true, // cria colunas createdAt e updatedAt
       underscored: true,
       underscoredAll: true,
-    },
+    
   },
 
 
