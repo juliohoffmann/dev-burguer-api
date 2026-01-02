@@ -20,11 +20,11 @@
         }
 
         mongo() {
-            // Use a variável de ambiente MONGO_URL aqui
-            this.mongooseConnection = mongoose.connect(process.env.MONGO_URL)
-                .then(() => console.log('MongoDB connected successfully!'))
-                .catch(err => console.error('MongoDB connection error:', err));
-        }
+                console.log('MONGO_URL being used by backend:', process.env.MONGO_URL); // Adicione esta linha
+                this.mongooseConnection = mongoose.connect(process.env.MONGO_URL)
+                    .then(() => console.log('MongoDB connected successfully!'))
+                    .catch(err => console.error('MongoDB connection error:', err));
+            }
     }
 
     export default new Database();
